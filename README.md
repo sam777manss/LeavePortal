@@ -1,2 +1,2 @@
 # LeavePortal
-Enterprise Employee Leave Management System — .NET 8, Clean Architecture, Azure
+Enterprise Employee Leave Management System — .NET 10, Clean Architecture, Azure
