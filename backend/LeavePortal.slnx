@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="LeavePortal.API/LeavePortal.API.csproj" />
+  <Project Path="LeavePortal.Core/LeavePortal.Core.csproj" />
+  <Project Path="LeavePortal.Functions/LeavePortal.Functions.csproj" />
+  <Project Path="LeavePortal.Infrastructure/LeavePortal.Infrastructure.csproj" />
+</Solution>
