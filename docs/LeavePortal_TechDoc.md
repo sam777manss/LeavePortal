@@ -13,7 +13,7 @@ Update the "Current Status" and "Session History" sections at the end of every s
 **Project Name:** LeavePortal
 **Type:** Employee Leave Management System
 **Purpose:** Learning enterprise architecture, interview prep, portfolio, foundation for future projects
-**Status:** Day 1 not started — ready to begin
+**Status:** Day 1 in progress
 
 ---
 
@@ -62,11 +62,16 @@ Database is the source of truth, NOT C# code.
 ### Frontend
 | Technology | Reason |
 |---|---|
-| React | Standard, you have experience |
+| React + Vite | Standard, fast dev server, modern setup |
 | React Router | Page navigation |
 | React Query (TanStack Query) | All API calls — handles caching, loading, error state. Modern enterprise standard for server state |
 | Zustand | Auth state (user info, role, isLoggedIn) — enterprise standard for global client state |
-| Bootstrap (minimal) | Styling — kept simple, not the focus |
+| Bootstrap 5 | Styling — clean, professional UI without a template. Fully custom, fully explainable |
+
+**Frontend build approach:**
+- UI is built from scratch using Bootstrap 5 — no paid templates
+- Looks professional, every component is understood and explainable in interviews
+- After each page is built, a short "explain this to me" review session happens for learning
 
 ### Why Zustand for Auth State (not Context API)
 Context API re-renders every component that consumes it whenever the value changes.
@@ -95,6 +100,13 @@ No actions, no reducers, no dispatch, no Provider wrapping.
 - GitHub only
 - No CI/CD pipeline
 - Manual deployment
+
+**Branch Strategy:**
+| Branch | Purpose |
+|---|---|
+| `main` | Stable baseline — merge into here when features are complete |
+| `backend` | All .NET backend work — API, Core, Infrastructure, Functions |
+| `frontend` | All React frontend work |
 
 ---
 
@@ -277,35 +289,42 @@ Order of operations for Day 1:
 
 ---
 
-## 13-Day Build Plan
+## 14-Day Build Plan
 
-| Day | Focus |
-|---|---|
-| 1 | GitHub repo, solution setup, 4 projects, Azure SQL created, tables designed, entities scaffolded |
-| 2 | Auth module — Register, Login, JWT HttpOnly Cookie, roles |
-| 3 | Leave Application module — API endpoints, Service Bus publisher |
-| 4 | Leave Approval module — Manager endpoints, status updates |
-| 5 | Notification module — Azure Function, Service Bus listener, Gmail SMTP |
-| 6 | Leave Balance module — deduction logic on approval |
-| 7 | Document module — Blob Storage upload, URL stored in DB |
-| 8 | React setup — Router, Zustand auth store, React Query, Login page |
-| 9 | React Employee Dashboard — apply for leave, view history |
-| 10 | React Manager Dashboard — view pending, approve/reject |
-| 11 | Deploy API to Azure Web App, deploy Functions |
-| 12 | Connect frontend to deployed API, test full flow end to end |
-| 13 | Bug fixes, cleanup, documentation update |
+| Day | Branch | Focus |
+|---|---|---|
+| 1 | backend | GitHub repo, solution setup, 4 projects, Azure SQL created, tables designed, entities scaffolded |
+| 2 | backend | Auth module — Register, Login, JWT HttpOnly Cookie, roles |
+| 3 | backend | Leave Application module — API endpoints, Service Bus publisher |
+| 4 | backend | Leave Approval module — Manager endpoints, status updates |
+| 5 | backend | Notification module — Azure Function, Service Bus listener, Gmail SMTP |
+| 6 | backend | Leave Balance module — deduction logic on approval |
+| 7 | backend | Document module — Blob Storage upload, URL stored in DB |
+| 8 | frontend | React + Vite setup, React Router, Zustand auth store, React Query config, Login page |
+| 9 | frontend | Auth flow — protected routes, role-based routing, Zustand wired to API |
+| 10 | frontend | Employee Dashboard — apply for leave form, leave history, React Query calls |
+| 11 | frontend | Manager Dashboard — pending requests list, approve/reject with comment |
+| 12 | both | Deploy API to Azure Web App, deploy Azure Functions |
+| 13 | both | Connect frontend to deployed API, test full end-to-end flow |
+| 14 | both | Bug fixes, cleanup, final documentation update |
 
 ---
 
 ## Current Status
-**Phase:** Day 1 — Not started
-**Last Updated:** Session 4
-**Next Step:** Create GitHub repo → Clone → Solution setup → Azure SQL → Design tables → Scaffold entities
-
-## Current Status
 **Phase:** Day 1 — In Progress
-**Last Updated:** Session 5
-**Next Step:** Clean up default generated files in Visual Studio → Create Azure SQL Database → Design 6 tables → Scaffold entities
+**Last Updated:** Session 6
+**Active Branch:** backend
+**Completed Today:**
+- Solution + 4 projects built and verified
+- Default generated files cleaned up
+- Azure Resource Group, SQL Server, SQL Database created
+- Firewall configured, SSMS connected
+- Table 1 (Departments) ✅ created
+- Table 2 (Users) ✅ created
+- Two branches created: `backend` and `frontend`
+- Both documents updated with 4-day frontend plan
+
+**Next Step:** Continue creating remaining 4 tables in SSMS → run scaffold command → create enums in Core
 ---
 
 ## Session History
@@ -352,3 +371,21 @@ Added all 4 projects to solution
 Added all project references — dependency direction correct
 Build succeeded — 0 errors across all 4 projects
 Next: Open Visual Studio → clean up default generated files → create Azure SQL Database in Azure Portal
+
+### Session 6
+
+- Cleaned up default generated files: Class1.cs (Core + Infrastructure), .http file (API)
+- Build verified clean after cleanup
+- Azure Resource Group created: leaveportal-rg
+- Azure SQL Server created: leaveportal-sqlserver
+- Azure SQL Database created: leaveportal-db (Basic tier)
+- Firewall configured — client IP added, Azure services access enabled
+- SSMS connected to Azure SQL successfully
+- Table 1: Departments ✅ created in Azure SQL
+- Table 2: Users ✅ created in Azure SQL
+- Committed initial baseline to GitHub (15 files)
+- Created two branches: `backend` (active for Day 1) and `frontend` (Day 8+)
+- Decided frontend UI approach: Bootstrap 5 custom build — no templates
+- Decided learning approach: Claude writes all frontend code, review + explain after each page
+- Expanded frontend from 3 days to 4 days — overall plan updated to 14 days
+- Both documents updated to reflect all above changes

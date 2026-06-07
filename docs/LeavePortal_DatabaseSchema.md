@@ -353,7 +353,7 @@ public enum NotificationStatus
 When you need to add or change something in the database:
 
 1. Write the ALTER TABLE or new CREATE TABLE SQL
-2. Run it directly in Azure SQL (via Azure Portal Query Editor or SSMS)
+2. Run it directly in Azure SQL via SSMS
 3. Run the scaffold command again with `--force` to regenerate entities
 4. Update service logic to use the new properties
 5. Commit everything to GitHub
@@ -366,8 +366,8 @@ No migration files. Schema is the source of truth.
 
 | Table | Created in Azure SQL | Entities Scaffolded |
 |---|---|---|
-| Departments | ❌ Not yet | ❌ Not yet |
-| Users | ❌ Not yet | ❌ Not yet |
+| Departments | ✅ Created | ❌ Not yet |
+| Users | ✅ Created | ❌ Not yet |
 | LeaveTypes | ❌ Not yet | ❌ Not yet |
 | LeaveBalances | ❌ Not yet | ❌ Not yet |
 | LeaveApplications | ❌ Not yet | ❌ Not yet |
