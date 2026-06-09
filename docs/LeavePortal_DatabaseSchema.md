@@ -9,17 +9,20 @@
 ---
 
 ## Scaffold Command (run after tables are created or changed)
+Run from Visual Studio → Tools → NuGet Package Manager → Package Manager Console.
+Replace YOUR_PASSWORD with the real password (do NOT commit it).
+
 ```bash
-dotnet ef dbcontext scaffold \
-  "Server=YOUR_SERVER.database.windows.net;Database=leaveportal-db;User Id=YOUR_USER;Password=YOUR_PASSWORD;" \
-  Microsoft.EntityFrameworkCore.SqlServer \
-  --output-dir ../LeavePortal.Infrastructure/Entities \
-  --context-dir ../LeavePortal.Infrastructure/Data \
-  --context LeavePortalDbContext \
-  --force
+dotnet ef dbcontext scaffold "Server=leaveportal-sqlserver.database.windows.net;Database=leaveportal-db;User Id=leaveportaladmin;Password=YOUR_PASSWORD;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --output-dir Entities --context-dir Data --context LeavePortalDbContext --force --no-onconfiguring --project LeavePortal.Infrastructure\LeavePortal.Infrastructure.csproj
 ```
-Run this from inside the `LeavePortal.Infrastructure` project folder.
-`--force` overwrites existing generated files when re-scaffolding after schema changes.
+
+**Critical flags learned in Session 7:**
+- `--no-onconfiguring` — STOPS scaffold from hardcoding the connection string (with password) into the DbContext. Without this, every re-scaffold leaks the password back into source code.
+- `--force` — overwrites existing generated files when re-scaffolding after schema changes.
+- `--project ...csproj` — required because `cd` does not change directory inside Package Manager Console.
+
+The connection string is NOT in the DbContext. It lives in appsettings.json (placeholder) /
+appsettings.Development.json (real, gitignored) and is wired up in Program.cs via DI.
 
 ---
 
@@ -353,7 +356,7 @@ public enum NotificationStatus
 When you need to add or change something in the database:
 
 1. Write the ALTER TABLE or new CREATE TABLE SQL
-2. Run it directly in Azure SQL (via Azure Portal Query Editor or SSMS)
+2. Run it directly in Azure SQL via SSMS
 3. Run the scaffold command again with `--force` to regenerate entities
 4. Update service logic to use the new properties
 5. Commit everything to GitHub
@@ -366,9 +369,9 @@ No migration files. Schema is the source of truth.
 
 | Table | Created in Azure SQL | Entities Scaffolded |
 |---|---|---|
-| Departments | ❌ Not yet | ❌ Not yet |
-| Users | ❌ Not yet | ❌ Not yet |
-| LeaveTypes | ❌ Not yet | ❌ Not yet |
-| LeaveBalances | ❌ Not yet | ❌ Not yet |
-| LeaveApplications | ❌ Not yet | ❌ Not yet |
-| NotificationLogs | ❌ Not yet | ❌ Not yet |
+| Departments | ✅ Created | ✅ Scaffolded |
+| Users | ✅ Created | ✅ Scaffolded |
+| LeaveTypes | ✅ Created | ✅ Scaffolded |
+| LeaveBalances | ✅ Created | ✅ Scaffolded |
+| LeaveApplications | ✅ Created | ✅ Scaffolded |
+| NotificationLogs | ✅ Created | ✅ Scaffolded |
