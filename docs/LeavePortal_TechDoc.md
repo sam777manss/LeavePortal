@@ -186,7 +186,7 @@ LeavePortal.Functions      → depends on Core
 | Module | Description | Status |
 |---|---|---|
 | Auth | Register, Login, JWT issued via HttpOnly Cookie, role assigned | ✅ Done |
-| Leave Application | Employee submits leave form, optional document upload to Blob | Not Started |
+| Leave Application | Employee submits leave form, optional document upload to Blob | ✅ Done (apply/view/cancel; upload = Day 7) |
 | Leave Approval | Manager approves/rejects, comment added, notification triggered | Not Started |
 | Notification | Azure Function listens to Service Bus, sends email via Gmail SMTP | Not Started |
 | Leave Balance | Tracks total/used/remaining days per employee per year | Not Started |
@@ -311,9 +311,10 @@ Order of operations for Day 1:
 ---
 
 ## Current Status
-**Phase:** Day 2 — Complete
-**Last Updated:** Session 7
+**Phase:** Day 3 — Complete
+**Last Updated:** Session 8
 **Active Branch:** backend (code) — docs live on `main` only
+**See also:** `docs/Day3_LeaveApplication.md` for the full Day 3 write-up
 
 **Day 1 — Complete:**
 - Solution + 4 projects built and verified
@@ -338,7 +339,7 @@ Order of operations for Day 1:
 
 **Branching rule:** code on `backend`/`frontend`; docs updated on `main` only (single source of truth).
 
-**Next Step:** Day 3 — Leave Application module (API endpoints, Service Bus publisher)
+**Next Step:** Day 4 — Leave Approval module (Manager endpoints: view pending, approve/reject with comment)
 ---
 
 ## Session History
@@ -428,3 +429,20 @@ Next: Open Visual Studio → clean up default generated files → create Azure S
 - Verified in Swagger: 401 without login, 200 after login, 403 for Employee on manager route
 - Deep-dive teaching sessions on how MediatR Send() routes to handlers and how FluentValidation wires in
 - Decision: docs now live on `main` only (single source of truth); code stays on feature branches
+
+### Session 8
+
+**Day 3 — Leave Application module (built autonomously by Claude on request):**
+- Employee endpoints: apply, view my history, view by id, cancel — all via MediatR CQRS
+- Commands: ApplyLeaveCommand, CancelLeaveCommand (+ validators)
+- Queries: GetMyLeavesQuery, GetLeaveByIdQuery (read-only, AsNoTracking projections)
+- Handlers in Infrastructure; LeaveController in API with [Authorize]
+- Security: UserId always taken from JWT claims, never from request body
+- TotalDays computed server-side (end - start + 1, inclusive)
+- Ownership enforced inside queries (id + UserId); cancel guarded to Pending only
+- Introduced IServiceBusPublisher abstraction + ServiceBusPublisher STUB (logs messages)
+  - Real Azure Service Bus swapped in on Day 5 with zero handler changes
+- LeaveNotificationMessage contract defined for the queue
+- Build verified: 0 errors, 0 warnings; committed + pushed to backend (commit 918d3ec)
+- Full write-up created: docs/Day3_LeaveApplication.md
+- Not yet done (by design): balance check/deduction (Day 6), document upload (Day 7), real email (Day 5)
