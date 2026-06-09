@@ -38,6 +38,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterCommandValidator>()
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
 
+// Service Bus publisher — STUB for now (logs messages). Swapped for real Azure Service Bus on Day 5.
+builder.Services.AddScoped<IServiceBusPublisher, ServiceBusPublisher>();
+
 // JWT Authentication — reads token from HttpOnly Cookie
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
