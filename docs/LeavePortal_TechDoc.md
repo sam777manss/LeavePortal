@@ -187,7 +187,7 @@ LeavePortal.Functions      → depends on Core
 |---|---|---|
 | Auth | Register, Login, JWT issued via HttpOnly Cookie, role assigned | ✅ Done |
 | Leave Application | Employee submits leave form, optional document upload to Blob | ✅ Done (apply/view/cancel; upload = Day 7) |
-| Leave Approval | Manager approves/rejects, comment added, notification triggered | Not Started |
+| Leave Approval | Manager approves/rejects, comment added, notification triggered | ✅ Done (pending queue, approve/reject; real email = Day 5) |
 | Notification | Azure Function listens to Service Bus, sends email via Gmail SMTP | Not Started |
 | Leave Balance | Tracks total/used/remaining days per employee per year | Not Started |
 | Document | Upload to Blob Storage, URL saved in DB, retrievable later | Not Started |
@@ -311,10 +311,10 @@ Order of operations for Day 1:
 ---
 
 ## Current Status
-**Phase:** Day 3 — Complete
-**Last Updated:** Session 8
+**Phase:** Day 4 — Complete
+**Last Updated:** Session 9
 **Active Branch:** backend (code) — docs live on `main` only
-**See also:** `docs/Day3_LeaveApplication.md` for the full Day 3 write-up
+**See also:** `docs/Day3_LeaveApplication.md`, `docs/Day4_LeaveApproval.md` for full write-ups
 
 **Day 1 — Complete:**
 - Solution + 4 projects built and verified
@@ -337,9 +337,18 @@ Order of operations for Day 1:
 - JWT auth reads token from cookie, not Authorization header
 - Role-based authorization verified (401 no-login, 200 logged-in, 403 wrong-role)
 
+**Day 4 — Complete:**
+- Manager endpoints: view pending queue, approve, reject — all `[Authorize(Roles="Manager")]`
+- Commands: ApproveLeaveCommand, RejectLeaveCommand (+ validators); Query: GetPendingLeavesQuery
+- Reject requires a comment (NotEmpty); approve comment optional (.When)
+- Pending → Approved/Rejected state machine; ReviewedBy/ReviewComment/ReviewedAt stamped
+- ManagerId taken from JWT claims, never the request body
+- New PendingLeaveDto exposes EmployeeName/Email; pending queue is FIFO (oldest first)
+- Smoke-tested end-to-end (approve, reject, required-comment 400, employee-gets-403)
+
 **Branching rule:** code on `backend`/`frontend`; docs updated on `main` only (single source of truth).
 
-**Next Step:** Day 4 — Leave Approval module (Manager endpoints: view pending, approve/reject with comment)
+**Next Step:** Day 5 — Real notifications (replace ServiceBusPublisher stub with Azure Service Bus + Azure Function + Gmail SMTP email)
 ---
 
 ## Session History
@@ -446,3 +455,28 @@ Next: Open Visual Studio → clean up default generated files → create Azure S
 - Build verified: 0 errors, 0 warnings; committed + pushed to backend (commit 918d3ec)
 - Full write-up created: docs/Day3_LeaveApplication.md
 - Not yet done (by design): balance check/deduction (Day 6), document upload (Day 7), real email (Day 5)
+
+### Session 9
+
+**Azure account migration:**
+- Old free-tier Azure subscription expired → created a new account/subscription
+- Recreated the database on a new server (`leaveportal-sqlserver2`) — tables, FKs, indexes, seed data
+- Updated connection target in appsettings.json + appsettings.Development.json (real secret stays gitignored)
+
+**Database First lesson (debugging a "scaffold error"):**
+- After recreating the DB, re-scaffold dropped the LeaveApplication `User`/`LeaveType` navigation properties
+- Root cause: the new `LeaveApplications` table was created **without its foreign keys**; scaffold mirrors the DB exactly, so no FK → no navigation property → handler code stopped compiling
+- The "scaffold/connection error" was actually a C# **build** failure (scaffold builds the project first)
+- Fix: added the 3 missing FKs in SSMS, re-scaffolded → navigation properties restored; build clean
+- Takeaway: in Database First the DB is the contract — recreate it *completely* (all FKs) or scaffold reflects the gaps
+
+**Day 3 re-verified** end-to-end against the new database (register/login/apply/view/cancel all green).
+
+**Day 4 — Leave Approval module (built step-by-step with explanations):**
+- Manager endpoints: GET /pending, PUT /{id}/approve, PUT /{id}/reject — all Manager-role gated
+- Commands/validators/handlers + PendingLeaveDto, Approve/RejectLeaveRequest
+- Layered authorization taught (class [Authorize] + method [Authorize(Roles)]; 401 vs 403)
+- Smoke-tested: pending list, approve, reject, required-comment 400, employee 403, outcomes flow back
+- Observed Azure SQL Basic-tier cold-start (~14s first request after idle) — retry succeeds once warm
+- Build clean (0/0); committed to backend (commits 7ed960f re-scaffold, 8e4b484 Day 4)
+- Full write-up created: docs/Day4_LeaveApproval.md
