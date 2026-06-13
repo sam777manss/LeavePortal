@@ -7,34 +7,6 @@ namespace LeavePortal.Infrastructure.Data;
 
 public partial class LeavePortalDbContext : DbContext
 {
-    // =====================================================================
-    // WHY OnConfiguring() IS NOT HERE
-    // =====================================================================
-    // When EF Core scaffolds this file, it generates an OnConfiguring()
-    // method with the connection string hardcoded inside — including your
-    // Azure SQL password in plain text.
-    //
-    // That is a security risk. If committed to GitHub, your password is public.
-    //
-    // The correct enterprise approach:
-    // - Connection string lives in appsettings.json (LeavePortal.API project)
-    // - DbContext is registered in Program.cs using dependency injection:
-    //
-    //     builder.Services.AddDbContext<LeavePortalDbContext>(options =>
-    //         options.UseSqlServer(
-    //             builder.Configuration.GetConnectionString("DefaultConnection")));
-    //
-    // - appsettings.json is added to .gitignore so it is never committed
-    //
-    // Every time you re-scaffold (schema changes), use this command:
-    //   dotnet ef dbcontext scaffold "..." Microsoft.EntityFrameworkCore.SqlServer
-    //     --output-dir Entities --context-dir Data --context LeavePortalDbContext
-    //     --force --no-onconfiguring
-    //     --project LeavePortal.Infrastructure\LeavePortal.Infrastructure.csproj
-    //
-    // --no-onconfiguring flag prevents scaffold from regenerating OnConfiguring()
-    // =====================================================================
-
     public LeavePortalDbContext(DbContextOptions<LeavePortalDbContext> options)
         : base(options)
     {
@@ -56,7 +28,7 @@ public partial class LeavePortalDbContext : DbContext
     {
         modelBuilder.Entity<Department>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Departme__3214EC070715B8F3");
+            entity.HasKey(e => e.Id).HasName("PK__Departme__3214EC07A45765EE");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
             entity.Property(e => e.Name).HasMaxLength(100);
@@ -64,7 +36,7 @@ public partial class LeavePortalDbContext : DbContext
 
         modelBuilder.Entity<LeaveApplication>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__LeaveApp__3214EC07888DA746");
+            entity.HasKey(e => e.Id).HasName("PK__LeaveApp__3214EC079B1FD244");
 
             entity.HasIndex(e => e.Status, "IX_LeaveApplications_Status");
 
@@ -96,7 +68,7 @@ public partial class LeavePortalDbContext : DbContext
 
         modelBuilder.Entity<LeaveBalance>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__LeaveBal__3214EC07E3AB67B3");
+            entity.HasKey(e => e.Id).HasName("PK__LeaveBal__3214EC070BE25736");
 
             entity.HasIndex(e => new { e.UserId, e.Year }, "IX_LeaveBalances_UserId_Year");
 
@@ -117,7 +89,7 @@ public partial class LeavePortalDbContext : DbContext
 
         modelBuilder.Entity<LeaveType>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__LeaveTyp__3214EC0763055B9C");
+            entity.HasKey(e => e.Id).HasName("PK__LeaveTyp__3214EC07BD725959");
 
             entity.HasIndex(e => e.Name, "UQ_LeaveTypes_Name").IsUnique();
 
@@ -128,7 +100,7 @@ public partial class LeavePortalDbContext : DbContext
 
         modelBuilder.Entity<NotificationLog>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Notifica__3214EC07B8C9F27C");
+            entity.HasKey(e => e.Id).HasName("PK__Notifica__3214EC07A90FA930");
 
             entity.HasIndex(e => e.LeaveApplicationId, "IX_NotificationLogs_LeaveApplicationId");
 
@@ -146,7 +118,7 @@ public partial class LeavePortalDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC0785753369");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07A2110FD2");
 
             entity.HasIndex(e => e.Email, "UQ_Users_Email").IsUnique();
 
