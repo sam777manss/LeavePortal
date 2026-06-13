@@ -83,4 +83,53 @@ public class LeaveController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    // ===================== Manager-only endpoints (Day 4) =====================
+    // [Authorize(Roles = "Manager")] is layered ON TOP of the class-level [Authorize].
+    // Class level => must be logged in. Method level => must ALSO have the Manager role.
+    // A logged-in Employee hitting these gets 403 Forbidden (authenticated but not allowed).
+
+    // GET /api/leave/pending  — all pending applications across all employees
+    [HttpGet("pending")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> Pending()
+    {
+        var result = await _mediator.Send(new GetPendingLeavesQuery());
+        return Ok(result);
+    }
+
+    // PUT /api/leave/{id}/approve  — manager approves a pending application
+    [HttpPut("{id:int}/approve")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> Approve(int id, [FromBody] ApproveLeaveRequest request)
+    {
+        try
+        {
+            // Manager id is CurrentUserId (from JWT claims), NOT from the body.
+            var result = await _mediator.Send(
+                new ApproveLeaveCommand(id, CurrentUserId, request.Comment));
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // PUT /api/leave/{id}/reject  — manager rejects a pending application (comment required)
+    [HttpPut("{id:int}/reject")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> Reject(int id, [FromBody] RejectLeaveRequest request)
+    {
+        try
+        {
+            var result = await _mediator.Send(
+                new RejectLeaveCommand(id, CurrentUserId, request.Comment));
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
