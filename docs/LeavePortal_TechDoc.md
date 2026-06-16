@@ -13,7 +13,7 @@ Update the "Current Status" and "Session History" sections at the end of every s
 **Project Name:** LeavePortal
 **Type:** Employee Leave Management System
 **Purpose:** Learning enterprise architecture, interview prep, portfolio, foundation for future projects
-**Status:** Day 1 not started — ready to begin
+**Status:** Days 1–4 complete — Day 5 (Notification module) next
 
 ---
 
@@ -32,8 +32,8 @@ Update the "Current Status" and "Session History" sections at the end of every s
 |---|---|---|
 | ASP.NET Core Web API | .NET 10 LTS | Latest LTS release, already installed, enterprise standard on Microsoft stack. Even-numbered .NET releases are always LTS. |
 | Clean Architecture | — | Separates concerns, supports large teams, industry standard in .NET enterprise |
-| MediatR | Latest | CQRS pattern — controllers stay thin, sends commands/queries, routes to handlers |
-| FluentValidation | Latest | Validates incoming requests in dedicated classes, not scattered if/else in controllers |
+| Service layer | — | Controllers call plain service classes (`IAuthService`, `ILeaveService`) directly. Chosen over MediatR/CQRS after initially building with it — simpler to read and debug for a project this size |
+| DataAnnotations | — | Request-DTO validation via `[Required]`/`[EmailAddress]`/`[Range]` etc., auto-enforced by `[ApiController]`. Replaced FluentValidation — easier to debug, less indirection |
 | Entity Framework Core | Latest | ORM for data access — Database First approach |
 | JWT Authentication | — | Via HttpOnly Cookies — enterprise browser app standard |
 | Role-Based Authorization | — | Two roles: Employee and Manager |
@@ -116,11 +116,12 @@ No actions, no reducers, no dispatch, no Provider wrapping.
 - This is called async decoupled architecture — standard in every serious enterprise system
 - Benefit: email provider can be swapped, email service can go down — main API is unaffected
 
-### 3. MediatR / CQRS Pattern
-- Controller receives request → sends a Command or Query via MediatR → Handler processes it
-- Controllers have zero business logic — just receive and return
-- Almost every enterprise .NET codebase you interview for uses this pattern
-- Makes code testable and organized at scale
+### 3. Service Layer (originally MediatR / CQRS)
+- Controller receives request → calls a service method (e.g. `_leaveService.ApplyAsync(...)`) → the service holds the business logic
+- **Originally** built with MediatR/CQRS (Commands / Queries / Handlers) + FluentValidation; **deliberately refactored** to a plain service layer + DataAnnotations
+- **Why changed:** for a solo project this size, MediatR's indirection made debugging harder (`_mediator.Send()` hides where the logic actually lives) for little payoff. A service layer is equally common in enterprise .NET and far easier to step through.
+- **Validation now:** DataAnnotations on request DTOs (auto `400` via `[ApiController]`) + plain business-rule checks inside the services.
+- **Interview framing:** "I used MediatR + FluentValidation, then refactored to a service layer + DataAnnotations for debuggability and simplicity" — demonstrates judgment, not just pattern-copying.
 
 ### 4. Clean Architecture — 4 Projects
 - Separation of concerns — junior dev cannot accidentally write DB code in a controller
@@ -173,12 +174,12 @@ LeavePortal.Functions      → depends on Core
 
 | Module | Description | Status |
 |---|---|---|
-| Auth | Register, Login, JWT issued via HttpOnly Cookie, role assigned | Not Started |
-| Leave Application | Employee submits leave form, optional document upload to Blob | Not Started |
-| Leave Approval | Manager approves/rejects, comment added, notification triggered | Not Started |
-| Notification | Azure Function listens to Service Bus, sends email via Gmail SMTP | Not Started |
-| Leave Balance | Tracks total/used/remaining days per employee per year | Not Started |
-| Document | Upload to Blob Storage, URL saved in DB, retrievable later | Not Started |
+| Auth | Register, Login, JWT issued via HttpOnly Cookie, role assigned | ✅ Done (Day 2) |
+| Leave Application | Employee submits leave form, optional document upload to Blob | ✅ Done (Day 3) — apply, view, cancel |
+| Leave Approval | Manager approves/rejects, comment added, notification triggered | ✅ Done (Day 4) — approve, reject, pending queue |
+| Notification | Azure Function listens to Service Bus, sends email via Gmail SMTP | 🔶 In Progress — Service Bus publisher side built; Azure Function listener pending (Day 5) |
+| Leave Balance | Tracks total/used/remaining days per employee per year | ❌ Not Started |
+| Document | Upload to Blob Storage, URL saved in DB, retrievable later | ❌ Not Started |
 
 ---
 
@@ -263,7 +264,7 @@ Email__AppPassword = "your-google-app-password"
 
 Order of operations for Day 1:
 1. Create GitHub repo named `LeavePortal`
-2. Clone to `C:\Projects\LeavePortal`
+2. Clone to `D:\LeavesPortal\LeavePortal`
 3. Create folder structure: backend, frontend, docs
 4. Create .NET solution: `dotnet new sln -n LeavePortal` inside backend folder
 5. Create 4 projects (API, Core, Infrastructure, Functions)
@@ -298,14 +299,19 @@ Order of operations for Day 1:
 ---
 
 ## Current Status
-**Phase:** Day 1 — Not started
-**Last Updated:** Session 4
-**Next Step:** Create GitHub repo → Clone → Solution setup → Azure SQL → Design tables → Scaffold entities
+**Phase:** Day 5 in progress — Milestone 1 done (API publishes to Service Bus). Architecture refactored to service layer + DataAnnotations.
+**Last Updated:** Session 7
+**Done so far:**
+- Day 1 — GitHub repo, solution, 4 projects, Azure SQL created, 6 tables designed, entities scaffolded
+- Day 2 — Auth module (Register, Login, JWT via HttpOnly Cookie, roles)
+- Day 3 — Leave Application module (apply, view, cancel)
+- Day 4 — Leave Approval module (manager approve/reject, pending queue)
+- Re-pointed to a new Azure SQL server and re-scaffolded the DbContext
+- Day 5 Milestone 1 — real Azure Service Bus publisher wired in; apply/cancel fan out to department managers, approve/reject notify the employee; verified messages land in the `leave-notifications` queue
+- **Refactor** — removed MediatR/CQRS + FluentValidation; replaced with a service layer (`IAuthService`/`AuthService`, `ILeaveService`/`LeaveService`) + DataAnnotations validation
 
-## Current Status
-**Phase:** Day 1 — In Progress
-**Last Updated:** Session 5
-**Next Step:** Clean up default generated files in Visual Studio → Create Azure SQL Database → Design 6 tables → Scaffold entities
+**Next Step:** Day 5 Milestone 2 — Azure Function listening to Service Bus, sending email via Gmail SMTP, writing `NotificationLogs`
+**Deferred (later):** in-app notification feed in the React portal (~Day 9–10) — email-only for now
 ---
 
 ## Session History
@@ -352,3 +358,22 @@ Added all 4 projects to solution
 Added all project references — dependency direction correct
 Build succeeded — 0 errors across all 4 projects
 Next: Open Visual Studio → clean up default generated files → create Azure SQL Database in Azure Portal
+
+### Session 6
+- Day 1 finished — Azure SQL Database created, all 6 tables designed in Azure SQL, entities scaffolded into LeavePortal.Infrastructure/Entities
+- Re-pointed to a new Azure SQL server and re-scaffolded the DbContext
+- Database First lesson learned: recreate the DB completely before re-scaffolding, otherwise scaffold drops navigation properties
+- Day 2 — Auth module: Register, Login, JWT issued via HttpOnly Cookie, role-based authorization, built on MediatR (CQRS) + FluentValidation, with a ValidationBehavior pipeline
+- Day 3 — Leave Application module: apply for leave, view my leaves, view single leave, cancel leave (commands, queries, handlers, validators, LeaveController)
+- Day 4 — Leave Approval module: manager approve/reject with comment, pending-requests queue (ApproveLeave, RejectLeave, GetPendingLeaves)
+- Service Bus publisher side built and wired (IServiceBusPublisher, ServiceBusPublisher, LeaveNotificationMessage) ready for the Day 5 Azure Function
+- Updated both documents (TechDoc + DatabaseSchema) to reflect actual progress through Day 4
+- Next: Day 5 — Notification module (Azure Function + Service Bus listener + Gmail SMTP + NotificationLogs)
+
+### Session 7
+- Created Azure Service Bus namespace `leaveportal-bus` (Basic) + queue `leave-notifications`; stored connection string in API user-secrets
+- Generated a Gmail App Password (for the Day 5 Azure Function — not used yet)
+- Day 5 Milestone 1 — swapped the stub publisher for the real `Azure.Messaging.ServiceBus` implementation; `ServiceBusClient` registered as a singleton from user-secrets; apply/cancel fan out one message per department manager, approve/reject notify the employee. Verified 2 messages land in the queue on apply (department has 2 managers)
+- Decided notification routing (kept simple/less noisy): apply/cancel → dept managers; approve/reject → the employee. In-app feed deferred to ~Day 9–10
+- **Refactor (deliberate):** removed MediatR/CQRS + FluentValidation across Auth + Leave. Replaced with a service layer (`IAuthService`/`AuthService`, `ILeaveService`/`LeaveService`) injected into controllers, and DataAnnotations on request DTOs + business-rule checks in the services. Deleted all Commands/Queries/Handlers/Validators/Behaviors. Reason: easier to debug and read for a solo project; build green, behavior preserved
+- Next: Day 5 Milestone 2 — the Azure Function (Service Bus trigger → email via MailKit → write NotificationLogs)
