@@ -10,6 +10,11 @@ public class LeaveNotificationMessage
     // What happened — e.g. "LeaveApplied", "LeaveCancelled", "LeaveApproved", "LeaveRejected"
     public string EventType { get; set; } = string.Empty;
 
+    // WHO this email goes to. Set by the handler:
+    //   apply / cancel   -> a department manager (one message per manager)
+    //   approve / reject -> the employee
+    public string RecipientName { get; set; } = string.Empty;
+    public string RecipientEmail { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
     public string EmployeeEmail { get; set; } = string.Empty;
 
@@ -19,4 +24,6 @@ public class LeaveNotificationMessage
     public int TotalDays { get; set; }
 
     public string Status { get; set; } = string.Empty;
+    // Manager's comment on approve/reject — lets the email explain WHY. Null otherwise.
+    public string? ReviewComment { get; set; }
 }

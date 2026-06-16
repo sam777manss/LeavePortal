@@ -1,7 +1,5 @@
-using LeavePortal.Core.Commands.Leave;
 using LeavePortal.Core.DTOs.Leave;
-using LeavePortal.Core.Queries.Leave;
-using MediatR;
+using LeavePortal.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -16,11 +14,11 @@ namespace LeavePortal.API.Controllers;
 [Authorize]
 public class LeaveController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly ILeaveService _leaveService;
 
-    public LeaveController(IMediator mediator)
+    public LeaveController(ILeaveService leaveService)
     {
-        _mediator = mediator;
+        _leaveService = leaveService;
     }
 
     // Reads the authenticated user's id from the JWT claims.
@@ -34,14 +32,7 @@ public class LeaveController : ControllerBase
     {
         try
         {
-            var command = new ApplyLeaveCommand(
-                CurrentUserId,
-                request.LeaveTypeId,
-                request.StartDate,
-                request.EndDate,
-                request.Reason);
-
-            var result = await _mediator.Send(command);
+            var result = await _leaveService.ApplyAsync(CurrentUserId, request);
             return Ok(result);
         }
         catch (Exception ex)
@@ -54,7 +45,7 @@ public class LeaveController : ControllerBase
     [HttpGet("my")]
     public async Task<IActionResult> MyLeaves()
     {
-        var result = await _mediator.Send(new GetMyLeavesQuery(CurrentUserId));
+        var result = await _leaveService.GetMyLeavesAsync(CurrentUserId);
         return Ok(result);
     }
 
@@ -62,7 +53,7 @@ public class LeaveController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result = await _mediator.Send(new GetLeaveByIdQuery(id, CurrentUserId));
+        var result = await _leaveService.GetByIdAsync(id, CurrentUserId);
         if (result is null)
             return NotFound(new { message = "Leave application not found." });
 
@@ -75,7 +66,7 @@ public class LeaveController : ControllerBase
     {
         try
         {
-            var result = await _mediator.Send(new CancelLeaveCommand(id, CurrentUserId));
+            var result = await _leaveService.CancelAsync(id, CurrentUserId);
             return Ok(result);
         }
         catch (Exception ex)
@@ -94,7 +85,7 @@ public class LeaveController : ControllerBase
     [Authorize(Roles = "Manager")]
     public async Task<IActionResult> Pending()
     {
-        var result = await _mediator.Send(new GetPendingLeavesQuery());
+        var result = await _leaveService.GetPendingAsync();
         return Ok(result);
     }
 
@@ -106,8 +97,7 @@ public class LeaveController : ControllerBase
         try
         {
             // Manager id is CurrentUserId (from JWT claims), NOT from the body.
-            var result = await _mediator.Send(
-                new ApproveLeaveCommand(id, CurrentUserId, request.Comment));
+            var result = await _leaveService.ApproveAsync(id, CurrentUserId, request.Comment);
             return Ok(result);
         }
         catch (Exception ex)
@@ -123,8 +113,7 @@ public class LeaveController : ControllerBase
     {
         try
         {
-            var result = await _mediator.Send(
-                new RejectLeaveCommand(id, CurrentUserId, request.Comment));
+            var result = await _leaveService.RejectAsync(id, CurrentUserId, request.Comment);
             return Ok(result);
         }
         catch (Exception ex)

@@ -1,6 +1,5 @@
-using LeavePortal.Core.Commands.Auth;
+using LeavePortal.Core.DTOs.Auth;
 using LeavePortal.Core.Interfaces;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -11,21 +10,21 @@ namespace LeavePortal.API.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IAuthService _authService;
     private readonly IJwtService _jwtService;
 
-    public AuthController(IMediator mediator, IJwtService jwtService)
+    public AuthController(IAuthService authService, IJwtService jwtService)
     {
-        _mediator = mediator;
+        _authService = authService;
         _jwtService = jwtService;
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterCommand command)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         try
         {
-            var result = await _mediator.Send(command);
+            var result = await _authService.RegisterAsync(request);
             return Ok(result);
         }
         catch (Exception ex)
@@ -35,11 +34,11 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginCommand command)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         try
         {
-            var result = await _mediator.Send(command);
+            var result = await _authService.LoginAsync(request);
 
             // Generate JWT and set as HttpOnly Cookie
             var token = _jwtService.GenerateToken(result);

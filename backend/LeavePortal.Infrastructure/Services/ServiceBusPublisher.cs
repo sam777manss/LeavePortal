@@ -1,32 +1,38 @@
 using System.Text.Json;
+using Azure.Messaging.ServiceBus;
 using LeavePortal.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace LeavePortal.Infrastructure.Services;
 
-// STUB implementation for Day 3.
-// The Azure Service Bus namespace/queue is not created until Day 5, so for now we just
-// log the message that WOULD be published. The rest of the system (handlers, controllers)
-// already talks to IServiceBusPublisher, so on Day 5 we replace ONLY this class with the
-// real Azure.Messaging.ServiceBus implementation — nothing else changes.
+// REAL Azure Service Bus implementation (Day 5) — replaces the Day 3 stub.
+// Handlers depend only on IServiceBusPublisher, so swapping this class in required
+// NO handler changes. This is the decoupled architecture decision in practice.
 public class ServiceBusPublisher : IServiceBusPublisher
 {
+    private readonly ServiceBusClient _client;
     private readonly ILogger<ServiceBusPublisher> _logger;
 
-    public ServiceBusPublisher(ILogger<ServiceBusPublisher> logger)
+    public ServiceBusPublisher(ServiceBusClient client, ILogger<ServiceBusPublisher> logger)
     {
+        _client = client;
         _logger = logger;
     }
 
-    public Task PublishAsync<T>(string queueOrTopic, T message, CancellationToken cancellationToken = default)
+    public async Task PublishAsync<T>(string queueOrTopic, T message, CancellationToken cancellationToken = default)
     {
+        // ServiceBusClient is the heavyweight, thread-safe object (registered as a singleton).
+        // A sender is lightweight, so creating one per publish is fine.
+        await using var sender = _client.CreateSender(queueOrTopic);
+
         var json = JsonSerializer.Serialize(message);
+        var sbMessage = new ServiceBusMessage(json)
+        {
+            ContentType = "application/json"
+        };
 
-        _logger.LogInformation(
-            "[ServiceBus STUB] Would publish to '{Queue}': {Payload}",
-            queueOrTopic, json);
+        await sender.SendMessageAsync(sbMessage, cancellationToken);
 
-        // No real send yet. Returns immediately so the API stays fast and decoupled.
-        return Task.CompletedTask;
+        _logger.LogInformation("Published message to '{Queue}': {Payload}", queueOrTopic, json);
     }
 }

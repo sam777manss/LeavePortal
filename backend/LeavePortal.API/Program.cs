@@ -1,15 +1,11 @@
-using FluentValidation;
-using LeavePortal.Core.Behaviors;
 using LeavePortal.Core.Interfaces;
-using LeavePortal.Core.Validators.Auth;
 using LeavePortal.Infrastructure.Data;
-using LeavePortal.Infrastructure.Handlers.Auth;
 using LeavePortal.Infrastructure.Services;
-using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Azure.Messaging.ServiceBus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,20 +21,20 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<LeavePortalDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// MediatR — scans Infrastructure assembly for all Handlers
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(RegisterCommandHandler).Assembly));
-
-// ValidationBehavior — runs FluentValidation before every Handler automatically
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
-// FluentValidation — scans Core assembly for all Validators
-builder.Services.AddValidatorsFromAssemblyContaining<RegisterCommandValidator>();
+// Application services — plain service-layer classes the controllers call directly.
+// (Replaced MediatR/CQRS handlers + FluentValidation: simpler to read and step through.)
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ILeaveService, LeaveService>();
 
 // JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
 
-// Service Bus publisher — STUB for now (logs messages). Swapped for real Azure Service Bus on Day 5.
+// Azure Service Bus — ONE ServiceBusClient for the whole app (heavyweight + thread-safe → singleton).
+// Connection string comes from user-secrets (ServiceBus:ConnectionString), never from committed config.
+builder.Services.AddSingleton(_ =>
+    new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+
+// Real Service Bus publisher (Day 5) — sends each notification message to the queue.
 builder.Services.AddScoped<IServiceBusPublisher, ServiceBusPublisher>();
 
 // JWT Authentication — reads token from HttpOnly Cookie

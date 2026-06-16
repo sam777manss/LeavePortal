@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace LeavePortal.Core.DTOs.Leave;
 
 // Request body for approving a leave application.
@@ -5,5 +7,6 @@ namespace LeavePortal.Core.DTOs.Leave;
 // manager id comes from the JWT claims (never trusted from the body).
 public class ApproveLeaveRequest
 {
+    [MaxLength(1000, ErrorMessage = "Comment cannot exceed 1000 characters.")]
     public string? Comment { get; set; }
 }
