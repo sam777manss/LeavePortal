@@ -3,7 +3,7 @@
     "LeavePortal.Functions": {
       "commandName": "Project",
       "commandLineArgs": "--port 7036",
-      "launchBrowser": false
+      "launchBrowser": true
     }
   }
 }

@@ -367,11 +367,14 @@ No migration files. Schema is the source of truth.
 
 ## Current Schema Status
 
+All 6 tables are created in Azure SQL and scaffolded into `LeavePortal.Infrastructure/Entities`.
+Note: re-pointed to a new Azure SQL server during the build and re-scaffolded the DbContext.
+
 | Table | Created in Azure SQL | Entities Scaffolded |
 |---|---|---|
-| Departments | ✅ Created | ✅ Scaffolded |
-| Users | ✅ Created | ✅ Scaffolded |
-| LeaveTypes | ✅ Created | ✅ Scaffolded |
-| LeaveBalances | ✅ Created | ✅ Scaffolded |
-| LeaveApplications | ✅ Created | ✅ Scaffolded |
-| NotificationLogs | ✅ Created | ✅ Scaffolded |
+| Departments | ✅ Yes | ✅ Yes (Department.cs) |
+| Users | ✅ Yes | ✅ Yes (User.cs) |
+| LeaveTypes | ✅ Yes | ✅ Yes (LeaveType.cs) |
+| LeaveBalances | ✅ Yes | ✅ Yes (LeaveBalance.cs) |
+| LeaveApplications | ✅ Yes | ✅ Yes (LeaveApplication.cs) |
+| NotificationLogs | ✅ Yes | ✅ Yes (NotificationLog.cs) |
