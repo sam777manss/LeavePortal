@@ -186,7 +186,24 @@ public class LeaveService : ILeaveService
 
         if (application.Status != LeaveStatus.Pending.ToString())
             throw new Exception($"Only pending applications can be approved. Current status: {application.Status}.");
+        // --- Day 6: check & deduct the employee's leave balance (for the leave's year) ---
+        var year = application.StartDate.Year;
 
+        var balance = await _context.LeaveBalances
+            .FirstOrDefaultAsync(b => b.UserId == application.UserId
+                                   && b.LeaveTypeId == application.LeaveTypeId
+                                   && b.Year == year, cancellationToken);
+
+        if (balance is null)
+            throw new Exception($"No leave balance configured for this leave type in {year}.");
+
+        var remaining = balance.TotalDays - balance.UsedDays;
+        if (remaining < application.TotalDays)
+            throw new Exception($"Insufficient balance: {remaining} day(s) remaining, {application.TotalDays} requested.");
+
+        // Deduct: only UsedDays changes — the DB recomputes RemainingDays.
+        balance.UsedDays += application.TotalDays;
+        // -----------------------------------------------------------------------------
         // Stamp the review audit fields. ReviewedBy is the manager from the JWT, not the body.
         application.Status = LeaveStatus.Approved.ToString();
         application.ReviewedBy = managerId;

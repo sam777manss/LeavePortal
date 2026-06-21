@@ -178,7 +178,7 @@ LeavePortal.Functions      → depends on Core
 | Leave Application | Employee submits leave form, optional document upload to Blob | ✅ Done (Day 3) — apply, view, cancel |
 | Leave Approval | Manager approves/rejects, comment added, notification triggered | ✅ Done (Day 4) — approve, reject, pending queue |
 | Notification | Azure Function listens to Service Bus, sends email via Gmail SMTP | 🔶 In Progress — Service Bus publisher side built; Azure Function listener pending (Day 5) |
-| Leave Balance | Tracks total/used/remaining days per employee per year | ❌ Not Started |
+| Leave Balance | Tracks total/used/remaining days per employee per year | ✅ Done (Day 6) — checks + deducts balance on approval |
 | Document | Upload to Blob Storage, URL saved in DB, retrievable later | ❌ Not Started |
 
 ---
@@ -299,7 +299,7 @@ Order of operations for Day 1:
 ---
 
 ## Current Status
-**Phase:** Day 5 in progress — Milestone 1 done (API publishes to Service Bus). Architecture refactored to service layer + DataAnnotations.
+**Phase:** Days 1–6 complete — Day 7 (Document upload) next.
 **Last Updated:** Session 7
 **Done so far:**
 - Day 1 — GitHub repo, solution, 4 projects, Azure SQL created, 6 tables designed, entities scaffolded
@@ -307,10 +307,11 @@ Order of operations for Day 1:
 - Day 3 — Leave Application module (apply, view, cancel)
 - Day 4 — Leave Approval module (manager approve/reject, pending queue)
 - Re-pointed to a new Azure SQL server and re-scaffolded the DbContext
-- Day 5 Milestone 1 — real Azure Service Bus publisher wired in; apply/cancel fan out to department managers, approve/reject notify the employee; verified messages land in the `leave-notifications` queue
+- Day 5 — Notification module: real Azure Service Bus publisher + Azure Function (Service Bus trigger → email via MailKit/Gmail SMTP → `NotificationLogs` row). Verified end-to-end (email delivered, log written).
+- Day 6 — Leave Balance module: on approval, check the employee's balance for the leave's year and deduct `UsedDays`; block approval on insufficient/missing balance. Verified (deduct + guard rails).
 - **Refactor** — removed MediatR/CQRS + FluentValidation; replaced with a service layer (`IAuthService`/`AuthService`, `ILeaveService`/`LeaveService`) + DataAnnotations validation
 
-**Next Step:** Day 5 Milestone 2 — Azure Function listening to Service Bus, sending email via Gmail SMTP, writing `NotificationLogs`
+**Next Step:** Day 7 — Document module: upload medical certificate etc. to Azure Blob Storage, save the URL on the leave application
 **Deferred (later):** in-app notification feed in the React portal (~Day 9–10) — email-only for now
 ---
 
@@ -376,4 +377,7 @@ Next: Open Visual Studio → clean up default generated files → create Azure S
 - Day 5 Milestone 1 — swapped the stub publisher for the real `Azure.Messaging.ServiceBus` implementation; `ServiceBusClient` registered as a singleton from user-secrets; apply/cancel fan out one message per department manager, approve/reject notify the employee. Verified 2 messages land in the queue on apply (department has 2 managers)
 - Decided notification routing (kept simple/less noisy): apply/cancel → dept managers; approve/reject → the employee. In-app feed deferred to ~Day 9–10
 - **Refactor (deliberate):** removed MediatR/CQRS + FluentValidation across Auth + Leave. Replaced with a service layer (`IAuthService`/`AuthService`, `ILeaveService`/`LeaveService`) injected into controllers, and DataAnnotations on request DTOs + business-rule checks in the services. Deleted all Commands/Queries/Handlers/Validators/Behaviors. Reason: easier to debug and read for a solo project; build green, behavior preserved
-- Next: Day 5 Milestone 2 — the Azure Function (Service Bus trigger → email via MailKit → write NotificationLogs)
+- Day 5 Milestone 2 — built `LeaveNotificationFunction` (isolated worker): `[ServiceBusTrigger]` on `leave-notifications` → build email by event type → send via MailKit over Gmail SMTP → write a `NotificationLogs` row via `Microsoft.Data.SqlClient` (Core-only, no EF). Settings in gitignored `local.settings.json`. Hit a Core Tools mismatch (.NET 10) — fixed by updating Azure Functions Core Tools. Verified end-to-end: email delivered, log row written
+- Day 6 — Leave Balance module: in `ApproveAsync`, look up the employee's balance for the leave's start-year, block if missing or insufficient, else `UsedDays += TotalDays` (DB recomputes `RemainingDays`); deduction saved atomically with the approval. Verified deduct (3 used / 2 remaining) + the insufficient-balance block
+- Test data: changed several `Users.Email` values to real `+`-aliased Gmail addresses so notifications actually arrive (note: email = login id, so logins changed too)
+- Next: Day 7 — Document module (Azure Blob Storage upload, save URL on the leave application)
