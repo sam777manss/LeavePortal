@@ -7,7 +7,7 @@ namespace LeavePortal.Core.Interfaces;
 // from the JWT claims — never taken from the request body.
 public interface ILeaveService
 {
-    Task<LeaveApplicationDto> ApplyAsync(int userId, ApplyLeaveRequest request, CancellationToken cancellationToken = default);
+    Task<LeaveApplicationDto> ApplyAsync(int userId, ApplyLeaveRequest request, string? documentUrl, CancellationToken cancellationToken = default);
     Task<List<LeaveApplicationDto>> GetMyLeavesAsync(int userId, CancellationToken cancellationToken = default);
     Task<LeaveApplicationDto?> GetByIdAsync(int leaveApplicationId, int userId, CancellationToken cancellationToken = default);
     Task<LeaveApplicationDto> CancelAsync(int leaveApplicationId, int userId, CancellationToken cancellationToken = default);
@@ -15,4 +15,5 @@ public interface ILeaveService
     Task<List<PendingLeaveDto>> GetPendingAsync(CancellationToken cancellationToken = default);
     Task<LeaveApplicationDto> ApproveAsync(int leaveApplicationId, int managerId, string? comment, CancellationToken cancellationToken = default);
     Task<LeaveApplicationDto> RejectAsync(int leaveApplicationId, int managerId, string comment, CancellationToken cancellationToken = default);
+    Task<string?> GetDocumentUrlAsync(int leaveApplicationId, int userId, bool isManager, CancellationToken cancellationToken = default);
 }

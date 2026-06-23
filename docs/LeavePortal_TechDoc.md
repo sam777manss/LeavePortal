@@ -179,7 +179,7 @@ LeavePortal.Functions      → depends on Core
 | Leave Approval | Manager approves/rejects, comment added, notification triggered | ✅ Done (Day 4) — approve, reject, pending queue |
 | Notification | Azure Function listens to Service Bus, sends email via Gmail SMTP | 🔶 In Progress — Service Bus publisher side built; Azure Function listener pending (Day 5) |
 | Leave Balance | Tracks total/used/remaining days per employee per year | ✅ Done (Day 6) — checks + deducts balance on approval |
-| Document | Upload to Blob Storage, URL saved in DB, retrievable later | ❌ Not Started |
+| Document | Upload to Blob Storage, URL saved in DB, retrievable later | ✅ Done (Day 7) — upload on apply + secure download (owner/manager) |
 
 ---
 
@@ -299,7 +299,7 @@ Order of operations for Day 1:
 ---
 
 ## Current Status
-**Phase:** Days 1–6 complete — Day 7 (Document upload) next.
+**Phase:** Days 1–7 complete (full backend) — Day 8 (React frontend) next.
 **Last Updated:** Session 7
 **Done so far:**
 - Day 1 — GitHub repo, solution, 4 projects, Azure SQL created, 6 tables designed, entities scaffolded
@@ -309,9 +309,10 @@ Order of operations for Day 1:
 - Re-pointed to a new Azure SQL server and re-scaffolded the DbContext
 - Day 5 — Notification module: real Azure Service Bus publisher + Azure Function (Service Bus trigger → email via MailKit/Gmail SMTP → `NotificationLogs` row). Verified end-to-end (email delivered, log written).
 - Day 6 — Leave Balance module: on approval, check the employee's balance for the leave's year and deduct `UsedDays`; block approval on insufficient/missing balance. Verified (deduct + guard rails).
+- Day 7 — Document module: optional file upload on apply → Azure Blob Storage (private `leave-documents` container), URL saved on the application; secure `GET /api/leave/{id}/document` streams the file to the owner or any manager. Verified.
 - **Refactor** — removed MediatR/CQRS + FluentValidation; replaced with a service layer (`IAuthService`/`AuthService`, `ILeaveService`/`LeaveService`) + DataAnnotations validation
 
-**Next Step:** Day 7 — Document module: upload medical certificate etc. to Azure Blob Storage, save the URL on the leave application
+**Next Step:** Day 8 — React frontend: project setup, Router, Zustand auth store, React Query, Login page
 **Deferred (later):** in-app notification feed in the React portal (~Day 9–10) — email-only for now
 ---
 
@@ -381,3 +382,11 @@ Next: Open Visual Studio → clean up default generated files → create Azure S
 - Day 6 — Leave Balance module: in `ApproveAsync`, look up the employee's balance for the leave's start-year, block if missing or insufficient, else `UsedDays += TotalDays` (DB recomputes `RemainingDays`); deduction saved atomically with the approval. Verified deduct (3 used / 2 remaining) + the insufficient-balance block
 - Test data: changed several `Users.Email` values to real `+`-aliased Gmail addresses so notifications actually arrive (note: email = login id, so logins changed too)
 - Next: Day 7 — Document module (Azure Blob Storage upload, save URL on the leave application)
+
+### Session 8 (Day 7)
+- Created Azure Storage Account `leaveportalstorage` + private container `leave-documents`; connection string in API user-secrets (`BlobStorage:ConnectionString` / `ContainerName`)
+- Added `Azure.Storage.Blobs`; `IBlobStorageService`/`BlobStorageService` (Core interface takes a `Stream` so Core stays ASP.NET-free; GUID-prefixed blob names)
+- Apply endpoint now `multipart/form-data` (`[FromForm]` + optional `IFormFile`): controller uploads the file → URL → saved on `LeaveApplications.DocumentUrl`
+- Secure retrieval (Option A — stream through API): `GET /api/leave/{id}/document` authorizes owner-or-manager, then streams the blob (container stays private; server holds the key)
+- Verified: upload (blob in portal + URL saved) and download both work
+- Next: Day 8 — React frontend

@@ -15,10 +15,12 @@ namespace LeavePortal.API.Controllers;
 public class LeaveController : ControllerBase
 {
     private readonly ILeaveService _leaveService;
+    private readonly IBlobStorageService _blobStorage;
 
-    public LeaveController(ILeaveService leaveService)
+    public LeaveController(ILeaveService leaveService, IBlobStorageService blobStorageService)
     {
         _leaveService = leaveService;
+        _blobStorage = blobStorageService;
     }
 
     // Reads the authenticated user's id from the JWT claims.
@@ -26,13 +28,20 @@ public class LeaveController : ControllerBase
     private int CurrentUserId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    // POST /api/leave/apply
-    [HttpPost("apply")]
-    public async Task<IActionResult> Apply([FromBody] ApplyLeaveRequest request)
+    // POST /api/leave/apply  — now accepts multipart/form-data (fields + optional file)
+    [HttpPost("apply")] 
+    public async Task<IActionResult> Apply([FromForm] ApplyLeaveRequest request, IFormFile? document)
     {
         try
         {
-            var result = await _leaveService.ApplyAsync(CurrentUserId, request);
+            string? documentUrl = null;
+            if (document is not null && document.Length > 0)
+            {
+                await using var stream = document.OpenReadStream();
+                documentUrl = await _blobStorage.UploadAsync(stream, document.FileName, document.ContentType);
+            }
+
+            var result = await _leaveService.ApplyAsync(CurrentUserId, request, documentUrl);
             return Ok(result);
         }
         catch (Exception ex)
@@ -115,6 +124,27 @@ public class LeaveController : ControllerBase
         {
             var result = await _leaveService.RejectAsync(id, CurrentUserId, request.Comment);
             return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // GET /api/leave/{id}/document  — securely download the attached file (owner or any manager)
+    [HttpGet("{id:int}/document")]
+    public async Task<IActionResult> GetDocument(int id)
+    {
+        try
+        {
+            var isManager = User.IsInRole("Manager");
+            var documentUrl = await _leaveService.GetDocumentUrlAsync(id, CurrentUserId, isManager);
+
+            if (string.IsNullOrEmpty(documentUrl))
+                return NotFound(new { message = "No document attached to this application." });
+
+            var (content, contentType) = await _blobStorage.DownloadAsync(documentUrl);
+            return File(content, contentType);
         }
         catch (Exception ex)
         {

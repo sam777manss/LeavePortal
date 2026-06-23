@@ -27,7 +27,7 @@ public class LeaveService : ILeaveService
 
     // ===================== Employee operations =====================
 
-    public async Task<LeaveApplicationDto> ApplyAsync(int userId, ApplyLeaveRequest request, CancellationToken cancellationToken = default)
+    public async Task<LeaveApplicationDto> ApplyAsync(int userId, ApplyLeaveRequest request, string? documentUrl, CancellationToken cancellationToken = default)
     {
         // Business rules DataAnnotations can't express cleanly (cross-field / "today").
         var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
@@ -59,6 +59,7 @@ public class LeaveService : ILeaveService
             EndDate = request.EndDate,
             TotalDays = totalDays,
             Reason = request.Reason,
+            DocumentUrl = documentUrl,
             Status = LeaveStatus.Pending.ToString(),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -123,6 +124,22 @@ public class LeaveService : ILeaveService
                 CreatedAt = a.CreatedAt
             })
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<string?> GetDocumentUrlAsync(int leaveApplicationId, int userId, bool isManager, CancellationToken cancellationToken = default)
+    {
+        var application = await _context.LeaveApplications
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == leaveApplicationId, cancellationToken);
+
+        if (application is null)
+            throw new Exception("Leave application not found.");
+
+        // Authorization: the owner, or ANY manager, may access the document.
+        if (!isManager && application.UserId != userId)
+            throw new Exception("You are not allowed to access this document.");
+
+        return application.DocumentUrl;   // null if no document was attached
     }
 
     public async Task<LeaveApplicationDto> CancelAsync(int leaveApplicationId, int userId, CancellationToken cancellationToken = default)
