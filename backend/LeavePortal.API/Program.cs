@@ -37,6 +37,9 @@ builder.Services.AddSingleton(_ =>
 // Real Service Bus publisher (Day 5) — sends each notification message to the queue.
 builder.Services.AddScoped<IServiceBusPublisher, ServiceBusPublisher>();
 
+// Blob storage — one reusable client for the app (thread-safe → singleton).
+builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
+
 // JWT Authentication — reads token from HttpOnly Cookie
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

@@ -27,7 +27,7 @@ public class LeaveService : ILeaveService
 
     // ===================== Employee operations =====================
 
-    public async Task<LeaveApplicationDto> ApplyAsync(int userId, ApplyLeaveRequest request, CancellationToken cancellationToken = default)
+    public async Task<LeaveApplicationDto> ApplyAsync(int userId, ApplyLeaveRequest request, string? documentUrl, CancellationToken cancellationToken = default)
     {
         // Business rules DataAnnotations can't express cleanly (cross-field / "today").
         var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
@@ -59,6 +59,7 @@ public class LeaveService : ILeaveService
             EndDate = request.EndDate,
             TotalDays = totalDays,
             Reason = request.Reason,
+            DocumentUrl = documentUrl,
             Status = LeaveStatus.Pending.ToString(),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -125,6 +126,22 @@ public class LeaveService : ILeaveService
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<string?> GetDocumentUrlAsync(int leaveApplicationId, int userId, bool isManager, CancellationToken cancellationToken = default)
+    {
+        var application = await _context.LeaveApplications
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == leaveApplicationId, cancellationToken);
+
+        if (application is null)
+            throw new Exception("Leave application not found.");
+
+        // Authorization: the owner, or ANY manager, may access the document.
+        if (!isManager && application.UserId != userId)
+            throw new Exception("You are not allowed to access this document.");
+
+        return application.DocumentUrl;   // null if no document was attached
+    }
+
     public async Task<LeaveApplicationDto> CancelAsync(int leaveApplicationId, int userId, CancellationToken cancellationToken = default)
     {
         // Load WITH leave type and user, enforcing ownership (you can only cancel YOUR leave).
@@ -186,7 +203,24 @@ public class LeaveService : ILeaveService
 
         if (application.Status != LeaveStatus.Pending.ToString())
             throw new Exception($"Only pending applications can be approved. Current status: {application.Status}.");
+        // --- Day 6: check & deduct the employee's leave balance (for the leave's year) ---
+        var year = application.StartDate.Year;
 
+        var balance = await _context.LeaveBalances
+            .FirstOrDefaultAsync(b => b.UserId == application.UserId
+                                   && b.LeaveTypeId == application.LeaveTypeId
+                                   && b.Year == year, cancellationToken);
+
+        if (balance is null)
+            throw new Exception($"No leave balance configured for this leave type in {year}.");
+
+        var remaining = balance.TotalDays - balance.UsedDays;
+        if (remaining < application.TotalDays)
+            throw new Exception($"Insufficient balance: {remaining} day(s) remaining, {application.TotalDays} requested.");
+
+        // Deduct: only UsedDays changes — the DB recomputes RemainingDays.
+        balance.UsedDays += application.TotalDays;
+        // -----------------------------------------------------------------------------
         // Stamp the review audit fields. ReviewedBy is the manager from the JWT, not the body.
         application.Status = LeaveStatus.Approved.ToString();
         application.ReviewedBy = managerId;
