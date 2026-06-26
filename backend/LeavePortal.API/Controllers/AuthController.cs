@@ -47,7 +47,7 @@ public class AuthController : ControllerBase
             {
                 HttpOnly = true,   // JavaScript cannot read this cookie
                 Secure = true,     // Only sent over HTTPS
-                SameSite = SameSiteMode.Strict, // CSRF protection
+                SameSite = SameSiteMode.None, // CSRF protection
                 Expires = DateTimeOffset.UtcNow.AddHours(8)
             });
 
