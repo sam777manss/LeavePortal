@@ -17,6 +17,18 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer(); 
 builder.Services.AddSwaggerGen();
 
+// CORS — let the React dev server call this API, and allow cookies through.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")  // React (Vite) dev server address
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();   // REQUIRED — without this the JWT cookie is blocked
+    });
+});
+
 // DbContext — reads connection string from appsettings
 builder.Services.AddDbContext<LeavePortalDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -79,6 +91,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");   // must come before UseAuthentication
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
