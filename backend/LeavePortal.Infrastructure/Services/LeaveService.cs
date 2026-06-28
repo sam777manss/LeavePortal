@@ -346,4 +346,18 @@ public class LeaveService : ILeaveService
         ReviewedAt = application.ReviewedAt,
         CreatedAt = application.CreatedAt
     };
+
+    // Returns only ACTIVE leave types, projected to the small DTO the dropdown needs.
+    public async Task<List<LeaveTypeDto>> GetLeaveTypesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.LeaveTypes
+            .Where(t => t.IsActive)                 // hide deactivated types
+            .Select(t => new LeaveTypeDto           // shape each row into the DTO
+            {
+                Id = t.Id,
+                Name = t.Name,
+                DefaultDays = t.DefaultDays
+            })
+            .ToListAsync(cancellationToken);
+    }
 }

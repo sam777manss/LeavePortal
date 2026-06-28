@@ -151,4 +151,13 @@ public class LeaveController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    // GET /api/leave/types  — active leave types for the apply form dropdown.
+    // Any logged-in user can read these (class-level [Authorize] still applies).
+    [HttpGet("types")]
+    public async Task<IActionResult> LeaveTypes()
+    {
+        var result = await _leaveService.GetLeaveTypesAsync();
+        return Ok(result);
+    }
 }

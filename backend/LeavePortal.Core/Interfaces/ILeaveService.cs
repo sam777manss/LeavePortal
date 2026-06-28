@@ -16,4 +16,5 @@ public interface ILeaveService
     Task<LeaveApplicationDto> ApproveAsync(int leaveApplicationId, int managerId, string? comment, CancellationToken cancellationToken = default);
     Task<LeaveApplicationDto> RejectAsync(int leaveApplicationId, int managerId, string comment, CancellationToken cancellationToken = default);
     Task<string?> GetDocumentUrlAsync(int leaveApplicationId, int userId, bool isManager, CancellationToken cancellationToken = default);
+    Task<List<LeaveTypeDto>> GetLeaveTypesAsync(CancellationToken cancellationToken = default);
 }

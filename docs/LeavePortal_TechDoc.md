@@ -13,7 +13,7 @@ Update the "Current Status" and "Session History" sections at the end of every s
 **Project Name:** LeavePortal
 **Type:** Employee Leave Management System
 **Purpose:** Learning enterprise architecture, interview prep, portfolio, foundation for future projects
-**Status:** Days 1–4 complete — Day 5 (Notification module) next
+**Status:** Days 1–9 complete — Day 10 (Manager Dashboard: view pending, approve/reject) next
 
 ---
 
@@ -62,7 +62,7 @@ Database is the source of truth, NOT C# code.
 ### Frontend
 | Technology | Reason |
 |---|---|
-| React | Standard, you have experience |
+| React + TypeScript | Standard; TypeScript is the modern enterprise default. Built with Vite (`react-ts` template) + ESLint |
 | React Router | Page navigation |
 | React Query (TanStack Query) | All API calls — handles caching, loading, error state. Modern enterprise standard for server state |
 | Zustand | Auth state (user info, role, isLoggedIn) — enterprise standard for global client state |
@@ -299,8 +299,8 @@ Order of operations for Day 1:
 ---
 
 ## Current Status
-**Phase:** Days 1–7 complete (full backend) — Day 8 (React frontend) next.
-**Last Updated:** Session 7
+**Phase:** Days 1–9 complete (full backend + React login + Employee Dashboard) — Day 10 (Manager Dashboard) next.
+**Last Updated:** Session 10
 **Done so far:**
 - Day 1 — GitHub repo, solution, 4 projects, Azure SQL created, 6 tables designed, entities scaffolded
 - Day 2 — Auth module (Register, Login, JWT via HttpOnly Cookie, roles)
@@ -312,8 +312,12 @@ Order of operations for Day 1:
 - Day 7 — Document module: optional file upload on apply → Azure Blob Storage (private `leave-documents` container), URL saved on the application; secure `GET /api/leave/{id}/document` streams the file to the owner or any manager. Verified.
 - **Refactor** — removed MediatR/CQRS + FluentValidation; replaced with a service layer (`IAuthService`/`AuthService`, `ILeaveService`/`LeaveService`) + DataAnnotations validation
 
-**Next Step:** Day 8 — React frontend: project setup, Router, Zustand auth store, React Query, Login page
-**Deferred (later):** in-app notification feed in the React portal (~Day 9–10) — email-only for now
+**Next Step:** Day 10 — React Manager Dashboard: view pending requests, approve/reject with comment
+**Deferred (later):**
+- in-app notification feed in the React portal — email-only for now
+- backend cookie: `SameSite=None` for local dev (cross-origin); switch to `Strict`/`Lax` + same-domain hosting in production
+- file input doesn't visually clear after a successful apply (state is reset, but the native input keeps the filename) — minor polish
+- Manager role: the dashboard currently shows the employee view for everyone; Day 10 adds a manager-specific view/route
 ---
 
 ## Session History
@@ -390,3 +394,23 @@ Next: Open Visual Studio → clean up default generated files → create Azure S
 - Secure retrieval (Option A — stream through API): `GET /api/leave/{id}/document` authorizes owner-or-manager, then streams the blob (container stays private; server holds the key)
 - Verified: upload (blob in portal + URL saved) and download both work
 - Next: Day 8 — React frontend
+
+### Session 9 (Day 8)
+- Scaffolded the React app in `frontend/` with **Vite** (`react-ts` template) + **ESLint**; installed `react-router-dom`, `@tanstack/react-query`, `zustand`, `axios`, `bootstrap`
+- Wired 3 providers in `main.tsx`: `BrowserRouter`, `QueryClientProvider`, and Bootstrap CSS import; cleared Vite's demo `App.tsx`/`index.css`
+- **Zustand auth store** (`src/store/authStore.ts`): holds `user` (`fullName`, `role`) + `isLoggedIn`, with `login()`/`logout()` actions. Only safe user info — NOT the JWT (token stays in the HttpOnly cookie)
+- **axios instance** (`src/api/axios.ts`): `baseURL` `https://localhost:7147/api`, `withCredentials: true` so the browser sends the cookie
+- **Login page** (`src/pages/LoginPage.tsx`): Bootstrap card UI; `useMutation` → `POST /api/auth/login` → on success save user in Zustand + `navigate('/dashboard')`; loading + error states. Placeholder `DashboardPage` + routes in `App.tsx`
+- **Backend CORS** (`Program.cs`): added `AllowFrontend` policy (`WithOrigins("http://localhost:5173")` + `AllowCredentials`), `app.UseCors` before auth. Required for the browser to call the API with cookies
+- **Cookie fix**: changed login cookie `SameSite` from `Strict` → `None` (`AuthController.cs`) — frontend (`5173`) and API (`7147`) are different origins in dev, so Strict blocked the cookie. Still `HttpOnly` + `Secure`
+- Verified end-to-end: login from React hits the API breakpoint, cookie set, lands on dashboard with the user's name/role
+- Committed the frontend for the first time (git now tracks it)
+- Next: Day 9 — Employee Dashboard (apply for leave, view history)
+
+### Session 10 (Day 9)
+- **Auth foundation:** `Navbar` (shows user + Logout → `POST /api/auth/logout` clears cookie, `logout()` clears Zustand, redirect to login); restore-on-refresh in `App.tsx` (`useEffect` on load → `GET /api/auth/me` → refill store; shows "Loading..." until the check finishes so refresh doesn't bounce); `ProtectedRoute` wrapper guards `/dashboard` (redirect to `/` if `!isLoggedIn`)
+- **View leave history:** `MyLeaves` component — first `useQuery` (`GET /api/leave/my`) → Bootstrap table (type, dates, days, status) with loading/empty/error states
+- **Apply for leave:** `ApplyLeave` component — `useQuery` loads the type dropdown, `useMutation` submits as `multipart/form-data` (`FormData`: LeaveTypeId, StartDate, EndDate, Reason, optional `document` file) → `POST /api/leave/apply`; on success `queryClient.invalidateQueries(['myLeaves'])` auto-refreshes the table + form resets
+- **New backend endpoint** (chosen over hardcoding ids): `GET /api/leave/types` → `LeaveTypeDto` (Id, Name, DefaultDays) for active types only. Added `LeaveTypeDto`, `ILeaveService.GetLeaveTypesAsync`, `LeaveService.GetLeaveTypesAsync`, and the `[HttpGet("types")]` action (no route clash — `{id:int}` is int-constrained)
+- Spent good time on JWT deep-dive (structure, signing vs encryption, stateless validation) and the Zustand/"functions as values" mental model — user now solid on both
+- Next: Day 10 — Manager Dashboard (pending queue, approve/reject)
