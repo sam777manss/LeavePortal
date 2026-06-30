@@ -5,6 +5,7 @@ import { useAuthStore } from './store/authStore'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import ManagerDashboardPage from './pages/ManagerDashboardPage'
 
 function App() {
   debugger;
@@ -44,6 +45,14 @@ function App() {
           <DashboardPage />
         </ProtectedRoute>
       } />
+      <Route
+        path="/manager"
+        element={
+          <ProtectedRoute role="Manager">
+            <ManagerDashboardPage />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   )
 }

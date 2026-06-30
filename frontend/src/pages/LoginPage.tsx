@@ -22,9 +22,13 @@ function LoginPage() {
     },
     // Runs only if the call succeeded (the cookie is now set by the browser).
     onSuccess: (data) => {
-      debugger;
-      login({ fullName: data.fullName, role: data.role })  // save user in Zustand
-      navigate('/dashboard')                               // go to dashboard
+      login({ fullName: data.fullName, role: data.role })
+      // Managers go to the manager dashboard, everyone else to the normal one.
+      if (data.role === 'Manager') {
+        navigate('/manager')
+      } else {
+        navigate('/dashboard')
+      }
     },
   })
 

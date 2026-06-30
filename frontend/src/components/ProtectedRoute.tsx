@@ -1,24 +1,27 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 
-// "children" = whatever page we wrap inside this guard (e.g. <DashboardPage />).
 type Props = {
-  children: React.ReactNode   // React.ReactNode = "any JSX/content"
+  children: React.ReactNode
+  role?: string   // optional: if set, the user MUST have this role to see the page
 }
 
-function ProtectedRoute({ children }: Props) {
-    const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
-    debugger;
+function ProtectedRoute({ children, role }: Props) {
+  debugger;
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
+  const user = useAuthStore((state) => state.user)
 
-  // Not logged in? Redirect to the login page instead of showing the page.
-  // <Navigate> just sends the user to another route. "replace" = don't keep
-  // the blocked page in browser history (so Back won't return to it).
+  // Not logged in -> go to login.
   if (!isLoggedIn) {
     return <Navigate to="/" replace />
   }
 
-  // Logged in -> show the wrapped page as normal.
-  return <>{children}</>
-}
+  // A role is required but the user doesn't have it -> send them to the normal dashboard.
+  if (role && user?.role !== role) {
+    return <Navigate to="/dashboard" replace />
+  }
 
-export default ProtectedRoute
+  return <>{children}</>
+} 
+
+export default ProtectedRoute 

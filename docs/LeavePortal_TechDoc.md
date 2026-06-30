@@ -13,7 +13,7 @@ Update the "Current Status" and "Session History" sections at the end of every s
 **Project Name:** LeavePortal
 **Type:** Employee Leave Management System
 **Purpose:** Learning enterprise architecture, interview prep, portfolio, foundation for future projects
-**Status:** Days 1–9 complete — Day 10 (Manager Dashboard: view pending, approve/reject) next
+**Status:** Days 1–10 complete — Day 11 (Deploy API to Azure Web App, deploy Functions) next
 
 ---
 
@@ -299,8 +299,8 @@ Order of operations for Day 1:
 ---
 
 ## Current Status
-**Phase:** Days 1–9 complete (full backend + React login + Employee Dashboard) — Day 10 (Manager Dashboard) next.
-**Last Updated:** Session 10
+**Phase:** Days 1–10 complete (full backend + full React app: login, Employee + Manager dashboards) — Day 11 (deploy) next.
+**Last Updated:** Session 11
 **Done so far:**
 - Day 1 — GitHub repo, solution, 4 projects, Azure SQL created, 6 tables designed, entities scaffolded
 - Day 2 — Auth module (Register, Login, JWT via HttpOnly Cookie, roles)
@@ -312,12 +312,13 @@ Order of operations for Day 1:
 - Day 7 — Document module: optional file upload on apply → Azure Blob Storage (private `leave-documents` container), URL saved on the application; secure `GET /api/leave/{id}/document` streams the file to the owner or any manager. Verified.
 - **Refactor** — removed MediatR/CQRS + FluentValidation; replaced with a service layer (`IAuthService`/`AuthService`, `ILeaveService`/`LeaveService`) + DataAnnotations validation
 
-**Next Step:** Day 10 — React Manager Dashboard: view pending requests, approve/reject with comment
+**Next Step:** Day 11 — Deploy API to Azure Web App + deploy Functions; then Day 12 connect frontend to deployed API
 **Deferred (later):**
 - in-app notification feed in the React portal — email-only for now
 - backend cookie: `SameSite=None` for local dev (cross-origin); switch to `Strict`/`Lax` + same-domain hosting in production
 - file input doesn't visually clear after a successful apply (state is reset, but the native input keeps the filename) — minor polish
-- Manager role: the dashboard currently shows the employee view for everyone; Day 10 adds a manager-specific view/route
+- approve/reject use `window.prompt()` for the comment — fine for now; could become a Bootstrap modal later
+- a Manager has no link to the employee view (apply leave) — only `/manager`; add nav between the two if managers should also apply
 ---
 
 ## Session History
@@ -414,3 +415,11 @@ Next: Open Visual Studio → clean up default generated files → create Azure S
 - **New backend endpoint** (chosen over hardcoding ids): `GET /api/leave/types` → `LeaveTypeDto` (Id, Name, DefaultDays) for active types only. Added `LeaveTypeDto`, `ILeaveService.GetLeaveTypesAsync`, `LeaveService.GetLeaveTypesAsync`, and the `[HttpGet("types")]` action (no route clash — `{id:int}` is int-constrained)
 - Spent good time on JWT deep-dive (structure, signing vs encryption, stateless validation) and the Zustand/"functions as values" mental model — user now solid on both
 - Next: Day 10 — Manager Dashboard (pending queue, approve/reject)
+
+### Session 11 (Day 10)
+- **Role-based routing:** `LoginPage` `onSuccess` now navigates by role — `Manager` → `/manager`, else `/dashboard`. Added `/manager` route in `App.tsx`
+- **`ProtectedRoute` extended** with an optional `role?: string` prop: if set and `user.role !== role`, redirect to `/dashboard` (employees can't open `/manager`). No role passed = any logged-in user. Confirmed no redirect loops (each redirect lands on a page that accepts that user)
+- **`ManagerDashboardPage`** + **`PendingLeaves`** component: `useQuery` `GET /api/leave/pending` (manager-only) → table with employee name/type/dates/days/reason
+- **Approve/Reject:** two `useMutation`s — `PUT /api/leave/{id}/approve` (comment optional) and `PUT /api/leave/{id}/reject` (comment required, validated client+server). Comment captured via `window.prompt`; `mutate({ id, comment })` passes per-row vars to `mutationFn`; `onSuccess` → `invalidateQueries(['pendingLeaves'])` so the actioned row drops off the list. Backend endpoints already existed from Day 4
+- Deep-dive Q&A on React props: how `children` (content between tags) and named props (`role="Manager"`) are passed; optional prop = `undefined` when omitted; why `<Navigate>` redirects don't recurse
+- Next: Day 11 — deploy (Azure Web App for API, deploy Functions)
