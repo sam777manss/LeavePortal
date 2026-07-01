@@ -20,4 +20,8 @@
     <ProjectReference Include="..\LeavePortal.Infrastructure\LeavePortal.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

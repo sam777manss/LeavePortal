@@ -13,7 +13,7 @@ Update the "Current Status" and "Session History" sections at the end of every s
 **Project Name:** LeavePortal
 **Type:** Employee Leave Management System
 **Purpose:** Learning enterprise architecture, interview prep, portfolio, foundation for future projects
-**Status:** Days 1–10 complete — Day 11 (Deploy API to Azure Web App, deploy Functions) next
+**Status:** Days 1–12 complete (full app deployed to Azure on a single origin) — Day 13 (bug fixes, cleanup, docs) next
 
 ---
 
@@ -299,8 +299,13 @@ Order of operations for Day 1:
 ---
 
 ## Current Status
-**Phase:** Days 1–10 complete (full backend + full React app: login, Employee + Manager dashboards) — Day 11 (deploy) next.
-**Last Updated:** Session 11
+**Phase:** Days 1–12 complete — the whole app (React + API + Function) is live on Azure at a single origin. Day 13 (bug fixes, cleanup, docs) next.
+**Last Updated:** Session 13
+
+### Deployed Azure URLs (Day 11)
+- **API (App Service):** `https://leaveportal-api-deh7adc4b3cxddc6.centralindia-01.azurewebsites.net` — Swagger at `/swagger`
+- **Function App:** `leaveportal-functions-dkhzckcqe7ajbmah...centralindia-01.azurewebsites.net`
+- Both in `leaveportal-rg` (Central India). API plan = **S1** during the 1-month free trial → **scale down to F1 before the trial ends** to avoid charges.
 **Done so far:**
 - Day 1 — GitHub repo, solution, 4 projects, Azure SQL created, 6 tables designed, entities scaffolded
 - Day 2 — Auth module (Register, Login, JWT via HttpOnly Cookie, roles)
@@ -312,7 +317,7 @@ Order of operations for Day 1:
 - Day 7 — Document module: optional file upload on apply → Azure Blob Storage (private `leave-documents` container), URL saved on the application; secure `GET /api/leave/{id}/document` streams the file to the owner or any manager. Verified.
 - **Refactor** — removed MediatR/CQRS + FluentValidation; replaced with a service layer (`IAuthService`/`AuthService`, `ILeaveService`/`LeaveService`) + DataAnnotations validation
 
-**Next Step:** Day 11 — Deploy API to Azure Web App + deploy Functions; then Day 12 connect frontend to deployed API
+**Next Step:** Day 13 — bug fixes, cleanup, final documentation pass. Also: re-copy `frontend/dist` → API `wwwroot` + republish whenever the frontend changes; and **scale the App Service plan from S1 → F1 before the free trial ends**.
 **Deferred (later):**
 - in-app notification feed in the React portal — email-only for now
 - backend cookie: `SameSite=None` for local dev (cross-origin); switch to `Strict`/`Lax` + same-domain hosting in production
@@ -423,3 +428,21 @@ Next: Open Visual Studio → clean up default generated files → create Azure S
 - **Approve/Reject:** two `useMutation`s — `PUT /api/leave/{id}/approve` (comment optional) and `PUT /api/leave/{id}/reject` (comment required, validated client+server). Comment captured via `window.prompt`; `mutate({ id, comment })` passes per-row vars to `mutationFn`; `onSuccess` → `invalidateQueries(['pendingLeaves'])` so the actioned row drops off the list. Backend endpoints already existed from Day 4
 - Deep-dive Q&A on React props: how `children` (content between tags) and named props (`role="Manager"`) are passed; optional prop = `undefined` when omitted; why `<Navigate>` redirects don't recurse
 - Next: Day 11 — deploy (Azure Web App for API, deploy Functions)
+
+### Session 12 (Day 11 — Deploy)
+- **API → Azure App Service:** created `leaveportal-api` (Windows) in `leaveportal-rg` / Central India via VS Publish wizard. Plan = **S1** (on the 1-month free trial; must scale to F1 before trial ends). Deployment type = manual "Publish (pubxml)", skipped API Management. URL has a unique-hostname suffix
+- **Account hiccup:** VS initially "found no subscription" though signed in as the same account (`sameerxmansurix@gmail.com`) — fixed by re-adding the account so VS picked up the subscription/tenant
+- **API config:** added 8 App settings (Environment variables → **App settings** tab, NOT Connection strings) with `__` nesting — `ConnectionStrings__DefaultConnection`, `Jwt__Issuer/Audience/SecretKey`, `ServiceBus__ConnectionString`, `BlobStorage__ConnectionString/ContainerName`, plus `ASPNETCORE_ENVIRONMENT=Development` (so Swagger works on Azure). No `ServiceBus__QueueName` needed — queue name is a hardcoded const in `LeaveService`. Verified Swagger loads on Azure
+- **Function → Azure Function App:** created `leaveportal-functions` (Consumption, Central India, reused existing `leaveportalstorage`). First publish failed (SCM endpoint not awake yet) — retried after ~1 min, succeeded. VS publish auto-added `Azure.Identity` + `Microsoft.ApplicationInsights.WorkerService` to the `.csproj`
+- **Function config:** added App settings `ServiceBusConnection`, `SqlConnectionString`, `Email__SmtpHost/SmtpPort/SenderEmail/SenderName/AppPassword` (the trigger uses `Connection = "ServiceBusConnection"`, a different name than the API's setting)
+- **Verified end-to-end IN THE CLOUD:** logged in via deployed Swagger, applied leave → message to Service Bus → deployed Function sent the manager email + wrote a `NotificationLogs` row. Full backend now runs on Azure independent of the local machine
+- Learning: .NET config is layered — local uses 2 files (`appsettings.Development.json` + user-secrets, split to keep secrets out of git); Azure supplies the same keys as **environment variables** (App settings), all merged into one `IConfiguration`; `__` in env var = `:` in code
+- Next: Day 12 — point the React app at the deployed API + CORS + deploy frontend
+
+### Session 13 (Day 12 — Frontend integration & single-origin deploy)
+- **Decision:** host the SPA on the **same origin** as the API (not a separate Static Web App). Reason: the app uses an HttpOnly **cookie** — a separate domain makes it a third-party cookie (fragile, browsers blocking it). Same-origin is the enterprise-aligned pattern and matches the TechDoc's "production = same domain" note
+- **Env-based API URL (Vite):** `axios.ts` now uses `import.meta.env.VITE_API_URL`. `frontend/.env.development` = `https://localhost:7147/api` (local dev), `frontend/.env.production` = `/api` (relative → same origin in prod). `npm run dev` uses development, `npm run build` uses production
+- **API serves the SPA:** `Program.cs` — `app.UseDefaultFiles()` + `app.UseStaticFiles()` early, `app.MapFallbackToFile("/index.html")` after `MapControllers()` (so React Router client routes fall back to index.html while `/api/*` still hits controllers)
+- **Build + bundle:** `npm run build` → `frontend/dist` → copied into `backend/LeavePortal.API/wwwroot/` → republished the API. Whole app (login, both dashboards, apply/approve, emails) verified working at the single App Service URL, cookie flows cleanly (same origin, no CORS/third-party-cookie issues)
+- Local dev unchanged: `npm run dev` (5173) → local API (7147) with the existing CORS policy
+- Next: Day 13 — bug fixes, cleanup, docs; scale S1 → F1 before trial ends

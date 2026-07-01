@@ -83,6 +83,9 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+app.UseDefaultFiles();   // lets "/" serve index.html
+app.UseStaticFiles();    // serves the built React files from wwwroot
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -95,5 +98,9 @@ app.UseCors("AllowFrontend");   // must come before UseAuthentication
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Any route that ISN'T an API call falls back to index.html,
+// so React Router can handle client-side routes like /dashboard, /manager.
+app.MapFallbackToFile("/index.html");
 
 app.Run();

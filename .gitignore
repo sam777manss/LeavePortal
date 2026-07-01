@@ -427,3 +427,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Built React app copied into the API for single-origin hosting
+backend/LeavePortal.API/wwwroot/
