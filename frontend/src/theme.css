@@ -1,0 +1,124 @@
+:root {
+  --primary: #000000;
+  --secondary: #FFFFFF;
+  --accent: #FF5E5B;
+  --shadow: 8px 8px 0px var(--primary);
+}
+
+/* Monospace + base colors, app-wide */
+body {
+  font-family: 'Courier New', monospace;
+  background-color: var(--secondary);
+  color: var(--primary);
+}
+
+h1, h2, h3, h4, h5 {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Inputs / selects / textareas (also covers Bootstrap .form-control/.form-select) */
+input, textarea, select,
+.form-control, .form-select {
+  border: 2px solid var(--primary) !important;
+  border-radius: 0 !important;
+  background-color: var(--secondary);
+  font-family: 'Courier New', monospace;
+}
+input:focus, textarea:focus, select:focus,
+.form-control:focus, .form-select:focus {
+  box-shadow: 4px 4px 0px var(--primary) !important;
+  border-color: var(--primary) !important;
+  outline: none;
+}
+
+label, .form-label {
+  font-weight: bold;
+  color: var(--primary);
+}
+
+/* Buttons (covers Bootstrap .btn + variants) */
+button, .btn {
+  border: 2px solid var(--primary) !important;
+  border-radius: 0 !important;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  transition: all 0.2s;
+}
+button:hover, .btn:hover {
+  box-shadow: 4px 4px 0px var(--primary);
+  transform: translate(-2px, -2px);
+}
+
+/* Button colors */
+.btn-primary { background-color: var(--accent) !important; color: var(--secondary) !important; }
+.btn-success { background-color: #2ecc71 !important; color: #000 !important; }
+.btn-danger  { background-color: var(--accent) !important; color: #fff !important; }
+.btn-light   { background-color: var(--secondary) !important; color: var(--primary) !important; }
+
+/* Cards */
+.card {
+  border: 2px solid var(--primary) !important;
+  border-radius: 0 !important;
+  box-shadow: var(--shadow);
+  background-color: var(--secondary);
+}
+
+/* Tables */
+.table { border: 2px solid var(--primary); }
+.table th, .table td { border: 1px solid var(--primary) !important; }
+.table thead th { background-color: var(--primary); color: var(--secondary); }
+
+/* Navbar -> use the accent color */
+.navbar { border-bottom: 2px solid var(--primary); box-shadow: 0 4px 0px var(--primary); }
+.bg-primary { background-color: var(--accent) !important; }
+
+
+/* ---- Login page (exact sample look) ---- */
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid var(--primary);
+  padding: 40px 30px;
+  background-color: var(--secondary);
+  box-shadow: var(--shadow);
+  position: relative;
+  border-radius: 12px;
+}
+
+/* the second offset border behind the card */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: -6px;
+  bottom: -6px;
+  border: 1px solid var(--primary);
+  z-index: -1;
+  border-radius: 12px;
+}
+
+.login-container h1 {
+  margin-bottom: 30px;
+  font-size: 28px;
+  text-align: center;
+}
+
+/* our own field wrapper (NOT Bootstrap's .input-group) */
+.login-field {
+  margin-bottom: 20px;
+}
+.login-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}

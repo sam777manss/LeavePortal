@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './index.css'
 import App from './App.tsx'
+import './theme.css'   // neo-brutalist theme — overrides Bootstrap, applies to all pages
 
 // React Query needs ONE client that manages all API caching for the app
 const queryClient = new QueryClient()
