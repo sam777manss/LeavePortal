@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Azure.Messaging.ServiceBus;
+using LeavePortal.API.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,6 +82,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 app.UseDefaultFiles();   // lets "/" serve index.html
@@ -98,6 +101,8 @@ app.UseCors("AllowFrontend");   // must come before UseAuthentication
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapHub<ChatHub>("/chathub");
 
 // Any route that ISN'T an API call falls back to index.html,
 // so React Router can handle client-side routes like /dashboard, /manager.

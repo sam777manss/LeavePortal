@@ -3,6 +3,7 @@ import { create } from 'zustand'
 // What we keep about a logged-in user (only SAFE info — never the JWT token).
 // The token stays in the HttpOnly cookie, which JavaScript can't read.
 type User = {
+  id: number // NEW — needed for chat
   fullName: string
   role: string   // "Employee" or "Manager"
 }

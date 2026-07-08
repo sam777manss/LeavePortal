@@ -17,7 +17,7 @@ function LoginPage() {
       return response.data
     },
     onSuccess: (data) => {
-      login({ fullName: data.fullName, role: data.role })
+      login({ id: data.id, fullName: data.fullName, role: data.role })
       if (data.role === 'Manager') {
         navigate('/manager')
       } else {

@@ -7,6 +7,10 @@ namespace LeavePortal.Infrastructure.Data;
 
 public partial class LeavePortalDbContext : DbContext
 {
+    public LeavePortalDbContext()
+    {
+    }
+
     public LeavePortalDbContext(DbContextOptions<LeavePortalDbContext> options)
         : base(options)
     {
@@ -19,6 +23,8 @@ public partial class LeavePortalDbContext : DbContext
     public virtual DbSet<LeaveBalance> LeaveBalances { get; set; }
 
     public virtual DbSet<LeaveType> LeaveTypes { get; set; }
+
+    public virtual DbSet<Message> Messages { get; set; }
 
     public virtual DbSet<NotificationLog> NotificationLogs { get; set; }
 
@@ -96,6 +102,24 @@ public partial class LeavePortalDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Name).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Messages__3214EC072E7B45EC");
+
+            entity.Property(e => e.Content).HasMaxLength(2000);
+            entity.Property(e => e.SentAt).HasDefaultValueSql("(getutcdate())");
+
+            entity.HasOne(d => d.Receiver).WithMany(p => p.MessageReceivers)
+                .HasForeignKey(d => d.ReceiverId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Messages_Receiver");
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.MessageSenders)
+                .HasForeignKey(d => d.SenderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Messages_Sender");
         });
 
         modelBuilder.Entity<NotificationLog>(entity =>

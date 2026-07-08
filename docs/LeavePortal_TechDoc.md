@@ -13,7 +13,7 @@ Update the "Current Status" and "Session History" sections at the end of every s
 **Project Name:** LeavePortal
 **Type:** Employee Leave Management System
 **Purpose:** Learning enterprise architecture, interview prep, portfolio, foundation for future projects
-**Status:** Days 1–12 complete (full app deployed to Azure on a single origin) — Day 13 (bug fixes, cleanup, docs) next
+**Status:** Days 1–12 complete + real-time 1-to-1 chat (SignalR) added and deployed — Day 13 (bug fixes, cleanup, docs) ongoing
 
 ---
 
@@ -446,3 +446,13 @@ Next: Open Visual Studio → clean up default generated files → create Azure S
 - **Build + bundle:** `npm run build` → `frontend/dist` → copied into `backend/LeavePortal.API/wwwroot/` → republished the API. Whole app (login, both dashboards, apply/approve, emails) verified working at the single App Service URL, cookie flows cleanly (same origin, no CORS/third-party-cookie issues)
 - Local dev unchanged: `npm run dev` (5173) → local API (7147) with the existing CORS policy
 - Next: Day 13 — bug fixes, cleanup, docs; scale S1 → F1 before trial ends
+
+### Session 14 (Day 13 add-on — Real-time chat with SignalR)
+- **Feature:** 1-to-1 direct messaging between users, real-time via **SignalR (WebSockets)**, with persisted history
+- **DB:** new `Messages` table (Id, SenderId, ReceiverId, Content, SentAt, IsRead; two FKs → Users). Re-scaffolded the whole model with `dotnet ef dbcontext scaffold --force` (DB now has all FKs, so nav props regenerated cleanly). `Message` got `Sender`/`Receiver` nav props; `User` got `MessageSenders`/`MessageReceivers`. **Deleted the scaffolded `OnConfiguring` block** (it hardcodes the connection string + password — secret-leak risk; app uses config via DI instead)
+- **Scaffold gotchas hit:** `dotnet ef` CLI needs the project's working dir (PMC's "Default project" dropdown only drives the `Scaffold-DbContext` PMC cmdlet, not the CLI); PowerShell splits the connection string on `;` unless single-quoted. Fixed by running the CLI from the Infrastructure folder in Developer PowerShell with single quotes
+- **Backend:** `ChatController` (GET `/api/chat/users`, GET `/api/chat/history/{id}` — direct DbContext reads); `ChatHub : Hub` (`[Authorize]`, `SendMessage(receiverId, content)` → save to DB → `Clients.User(id).SendAsync("ReceiveMessage", …)` to receiver + sender). `Program.cs`: `AddSignalR()` + `MapHub<ChatHub>("/chathub")`. Cookie auth "just works" for SignalR because the WebSocket handshake carries the `jwt` cookie
+- **Frontend:** `npm i @microsoft/signalr`; `src/api/chatConnection.ts` (one `HubConnection`, `withCredentials`, auto-reconnect, hub URL derived from `VITE_API_URL` by stripping `/api`); `ChatPage.tsx` (contact list via `useQuery`, history via `useEffect`+state, `connection.on('ReceiveMessage')` to append live, `connection.invoke('SendMessage', …)` to send). Added `id` to the Zustand auth store (needed to align own vs other messages) — updated `authStore`, `LoginPage` onSuccess, `App.tsx` /me restore. Added `/chat` route + a Chat link in `Navbar`
+- **Deploy:** enabled **Web sockets = On** in App Service → General settings (SignalR needs it); rebuilt frontend → copied to `wwwroot` → republished. Verified real-time chat works in the cloud between two logged-in users, history persists
+- Architecture note: chat logic lives in the controller/hub directly (DbContext), not a service — a pragmatic choice for an add-on feature (idiomatic for SignalR hubs)
+- Reminder still open: scale App Service S1 → F1 before the free trial ends; rotate the SQL password (it was exposed in chat/scaffold output)

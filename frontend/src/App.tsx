@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ManagerDashboardPage from './pages/ManagerDashboardPage'
+import ChatPage from './pages/ChatPage'
 
 function App() {
   debugger;
@@ -22,7 +23,7 @@ function App() {
       .then((response) => {
         // Cookie was valid -> backend tells us the user -> put it back in the store.
         // /me returns { id, email, role, name }
-        login({ fullName: response.data.name, role: response.data.role })
+        login({ id: response.data.id,fullName: response.data.name, role: response.data.role })
       })
       .catch(() => {
         // 401 = no valid cookie -> stay logged out, nothing to do.
@@ -50,6 +51,14 @@ function App() {
         element={
           <ProtectedRoute role="Manager">
             <ManagerDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
           </ProtectedRoute>
         }
       />

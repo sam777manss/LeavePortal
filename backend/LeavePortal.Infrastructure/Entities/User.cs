@@ -28,4 +28,8 @@ public partial class User
     public virtual ICollection<LeaveApplication> LeaveApplicationUsers { get; set; } = new List<LeaveApplication>();
 
     public virtual ICollection<LeaveBalance> LeaveBalances { get; set; } = new List<LeaveBalance>();
+
+    public virtual ICollection<Message> MessageReceivers { get; set; } = new List<Message>();
+
+    public virtual ICollection<Message> MessageSenders { get; set; } = new List<Message>();
 }
