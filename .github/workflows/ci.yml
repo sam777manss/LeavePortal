@@ -19,5 +19,18 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore backend/LeavePortal.API/LeavePortal.API.csproj
 
-      - name: Build
+      - name: Build API
         run: dotnet build backend/LeavePortal.API/LeavePortal.API.csproj --no-restore --configuration Release
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
