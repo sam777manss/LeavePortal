@@ -5,8 +5,19 @@ on:
     branches: [ "frontend" ]
 
 jobs:
-  hello:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Say hello
-        run: echo "Hello from GitHub Actions!"
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore backend/LeavePortal.API/LeavePortal.API.csproj
+
+      - name: Build
+        run: dotnet build backend/LeavePortal.API/LeavePortal.API.csproj --no-restore --configuration Release
