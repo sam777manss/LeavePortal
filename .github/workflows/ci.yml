@@ -1,11 +1,11 @@
-name: CI
+name: CI/CD
 
 on:
   push:
     branches: [ "frontend" ]
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,21 +16,28 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore backend/LeavePortal.API/LeavePortal.API.csproj
-
-      - name: Build API
-        run: dotnet build backend/LeavePortal.API/LeavePortal.API.csproj --no-restore --configuration Release
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install frontend dependencies
-        run: npm ci
+      - name: Build frontend
+        run: |
+          npm ci
+          npm run build
         working-directory: frontend
 
-      - name: Build frontend
-        run: npm run build
-        working-directory: frontend
+      - name: Copy frontend build into API wwwroot
+        run: |
+          mkdir -p backend/LeavePortal.API/wwwroot
+          cp -r frontend/dist/* backend/LeavePortal.API/wwwroot/
+
+      - name: Publish API
+        run: dotnet publish backend/LeavePortal.API/LeavePortal.API.csproj -c Release -o ./publish
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: leaveportal-api
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
