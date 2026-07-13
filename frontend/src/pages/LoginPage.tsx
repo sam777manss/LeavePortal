@@ -34,7 +34,7 @@ function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-container">
-        <h1>LOGIN</h1>
+        <h1>LOGIN 🔐</h1>
 
         <form onSubmit={handleSubmit}>
           {/* use login-field, NOT Bootstrap's input-group */}
