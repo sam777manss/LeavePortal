@@ -27,7 +27,7 @@ Portal → **Resource groups** → **+ Create** → name `leaveportal-rg`, regio
 
 ## Step 2: Azure SQL Database
 1. Portal → **SQL databases** → **+ Create** → **Apply offer** (free monthly database).
-2. Database `leaveportal-db`; new server `leaveportal-sqlserver3`, SQL authentication (admin login + password kept private).
+2. Database `leaveportal-db` (**note:** with the free offer Azure actually named it `free-sql-db-2358031` — check the real name in SSMS/portal and use it as `Initial Catalog`); new server `leaveportal-sqlserver3`, SQL authentication (admin login + password kept private).
 3. Free limit behavior: **Auto-pause until next month**.
 4. Networking: Public endpoint, **Allow Azure services = Yes**, **Add current client IP = Yes**.
 
@@ -91,7 +91,7 @@ Notes on Flex Consumption create screen: pick existing `leaveportalstorage`; the
 
 | Secret name | Value (where to get it) |
 |---|---|
-| `SqlConnection` | SQL database → **Connection strings** → ADO.NET; replace `{your_password}` |
+| `SqlConnection` | SQL database → **Connection strings** → **ADO.NET (SQL authentication)** tab (NOT the Entra passwordless one — that causes "Login failed for user '<token-identified principal>'"); replace `{your_password}`; `Initial Catalog` must be the real DB name |
 | `BlobConnection` | Storage account → **Access keys** → key1 connection string |
 | `ServiceBusConnection` | Service Bus → **Shared access policies** → RootManageSharedAccessKey → primary connection string |
 | `JwtSecretKey` | Any long random string (32+ characters) |
@@ -139,3 +139,18 @@ Key vault → **Access control (IAM)** → **+ Add role assignment** → role **
 - *Managed Identity* = an identity Azure creates for your app in Entra ID. The app gets tokens automatically, so there is no password or key to store anywhere.
 - *System-assigned* = tied to one resource; created and deleted with it. *User-assigned* = a standalone identity you create once and attach to many resources (survives if the app is deleted).
 - *Why not appsettings.json* = secrets end up in Git and in every copy of the code, can't be rotated in one place, and there's no audit of who read them.
+
+## Troubleshooting log (real errors hit during the rebuild)
+| Error | Cause | Fix |
+|---|---|---|
+| Key vault reference red ❌ `SecretNotFound` | Secrets not created yet / name typo | Create secrets with exact names |
+| Secrets page: "operation is not allowed by RBAC" | You lack a data role on the vault | Give yourself **Key Vault Secrets Officer** |
+| `Login failed for user '<token-identified principal>'` | Copied the Entra **passwordless** connection string | Use ADO.NET **SQL authentication** string |
+| SQL login fails though password is right | DB name wrong (`free-sql-db-2358031`, not `leaveportal-db`) | Fix `Initial Catalog` |
+| `IDX10720 ... key has '240' bits` | JWT key too short | 64-character `JwtSecretKey` |
+| `ServiceBusConnectionStringProperties.Parse` FormatException | Copied the key, not the connection string | Copy **Primary Connection String** (`Endpoint=sb://...`) |
+| `StorageConnectionString ... No valid combination of account information` | Copied the key, not the connection string | Copy key1 **Connection string** (`DefaultEndpointsProtocol=https;...`) |
+| New secret version not picked up | App Service caches Key Vault values (up to 24h) | Change any app setting (e.g. `KV_REFRESH`) and Apply |
+
+Tip: to test whether Key Vault or the value is the problem, temporarily put the plain value in the app setting, then switch back.
+Tip: one bad connection string breaks *every* endpoint of a controller, because DI builds all dependencies (LeaveService → ServiceBusClient, BlobStorageService) when the controller is created.

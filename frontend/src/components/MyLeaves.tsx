@@ -11,6 +11,7 @@ type Leave = {
   reason: string
   status: string
   createdAt: string
+  documentUrl: string | null   // blob URL, or null if no file was attached
 }
 
 function MyLeaves() {
@@ -41,6 +42,7 @@ function MyLeaves() {
           <th>To</th>
           <th>Days</th>
           <th>Status</th>
+          <th>Document</th>
         </tr>
       </thead>
       <tbody>
@@ -53,6 +55,18 @@ function MyLeaves() {
             <td>{leave.endDate}</td>
             <td>{leave.totalDays}</td>
             <td>{leave.status}</td>
+            <td>
+              {/* Only show a link if a file was attached.
+                  The link goes through OUR API (not straight to Blob), so the API
+                  can check the cookie: only the owner or a manager can open it. */}
+              {leave.documentUrl ? (
+                <a href={`${import.meta.env.VITE_API_URL}/leave/${leave.id}/document`} target="_blank">
+                  View
+                </a>
+              ) : (
+                '-'
+              )}
+            </td>
           </tr>
         ))}
       </tbody>
