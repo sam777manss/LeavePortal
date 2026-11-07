@@ -89,7 +89,8 @@ var app = builder.Build();
 app.UseDefaultFiles();   // lets "/" serve index.html
 app.UseStaticFiles();    // serves the built React files from wwwroot
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() ||
+    app.Configuration.GetValue<bool>("EnableSwagger"))
 {
     app.MapOpenApi();
     app.UseSwagger();
