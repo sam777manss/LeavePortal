@@ -65,11 +65,13 @@ stages:
               appName: leaveportal-api
               package: $(Pipeline.Workspace)/api
 
-          - task: AzureFunctionApp@2
+          - task: AzureCLI@2
             displayName: Deploy Function (Flex Consumption)
             inputs:
-              connectedServiceNameARM: leaveportal-azure
-              appType: functionAppLinux
-              isFlexConsumption: true
-              appName: leaveportal-functions
-              package: $(Pipeline.Workspace)/func
+              azureSubscription: leaveportal-azure
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd $(Pipeline.Workspace)/func
+                zip -r ../func.zip .
+                az functionapp deployment source config-zip -g leaveportal-rg -n leaveportal-functions --src ../func.zip
