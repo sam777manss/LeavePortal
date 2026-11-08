@@ -19,10 +19,10 @@ stages:
         packageType: sdk
         version: 10.0.x
 
-    - task: NodeTool@0
+    - task: UseNode@1
       displayName: Install Node 20
       inputs:
-        versionSpec: 20.x
+        version: 20.x
 
     - script: |
         npm ci
@@ -46,3 +46,30 @@ stages:
 
     - publish: $(Build.ArtifactStagingDirectory)/func
       artifact: func
+
+- stage: Deploy
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployAll
+    environment: production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: Deploy API + React to App Service
+            inputs:
+              azureSubscription: leaveportal-azure
+              appType: webApp
+              appName: leaveportal-api
+              package: $(Pipeline.Workspace)/api
+
+          - task: AzureFunctionApp@2
+            displayName: Deploy Function (Flex Consumption)
+            inputs:
+              connectedServiceNameARM: leaveportal-azure
+              appType: functionAppLinux
+              isFlexConsumption: true
+              appName: leaveportal-functions
+              package: $(Pipeline.Workspace)/func
