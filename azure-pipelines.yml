@@ -1,0 +1,48 @@
+trigger:
+  branches:
+    include: [ frontend ]
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: Release
+
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    steps:
+    - task: UseDotNet@2
+      displayName: Install .NET 10
+      inputs:
+        packageType: sdk
+        version: 10.0.x
+
+    - task: NodeTool@0
+      displayName: Install Node 20
+      inputs:
+        versionSpec: 20.x
+
+    - script: |
+        npm ci
+        npm run build
+      workingDirectory: frontend
+      displayName: Build React
+
+    - script: |
+        mkdir -p backend/LeavePortal.API/wwwroot
+        cp -r frontend/dist/* backend/LeavePortal.API/wwwroot/
+      displayName: Copy React into wwwroot
+
+    - script: dotnet publish backend/LeavePortal.API/LeavePortal.API.csproj -c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)/api
+      displayName: Publish API
+
+    - script: dotnet publish backend/LeavePortal.Functions/LeavePortal.Functions.csproj -c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)/func
+      displayName: Publish Function
+
+    - publish: $(Build.ArtifactStagingDirectory)/api
+      artifact: api
+
+    - publish: $(Build.ArtifactStagingDirectory)/func
+      artifact: func
