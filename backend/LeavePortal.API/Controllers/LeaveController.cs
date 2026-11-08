@@ -94,8 +94,15 @@ public class LeaveController : ControllerBase
     [Authorize(Roles = "Manager")]
     public async Task<IActionResult> Pending()
     {
+        try
+        {
         var result = await _leaveService.GetPendingAsync();
         return Ok(result);
+        }
+        catch(Exception ex)
+        {
+            return BadRequest(new { message = ex.GetBaseException().Message });
+        }
     }
 
     // PUT /api/leave/{id}/approve  — manager approves a pending application
